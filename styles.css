@@ -4,12 +4,13 @@
 @import url("http://fonts.googleapis.com/css?family=Lato:400,700");
 
 body {
-  font-family: Roboto, 'Libre Baskerville', sans-serif; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
+  font-family: 'Computer Modern', Roboto, 'Libre Baskerville', sans-serif; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
   font-size: 15px;
   font-weight: 300;
   color: #404040;        /* #404040*/
   position: relative;
   background: #ffffff;      /* {{ site.page-col }}; */ /*#FFFFF8*/
+  text-align: justify;
 }
 
 /* distill specific */
@@ -278,11 +279,12 @@ d-footnote-list a.footnote-backlink {
 
 
 /* text highlights */
-.emph, em {
-  color: #E32D00;  /*#ff5500 #D14300*/
+/* .emph, em {
+  color: #c41d87;  #ff5500 #D14300 #E32D00
   font-style: normal;
   font-weight: 450;
-}
+} */
+/* #ff5500 #D14300 #E32D00  */
 
 /* don't do color for references */
 .references em {

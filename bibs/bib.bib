@@ -1,0 +1,103 @@
+@article{Author2024,
+  title={Example reference},
+  author={Author, Author2, Author3},
+  year={2024},
+  url={https://doi}
+}
+
+@article{gomes2022should,
+  title={Should I use fixed effects or random effects when I have fewer than five levels of a grouping factor in a mixed-effects model?},
+  author={Gomes, Dylan GE},
+  journal={PeerJ},
+  volume={10},
+  pages={e12794},
+  year={2022},
+  publisher={PeerJ Inc.}
+}
+
+@book{Hyndman2021,
+  title={Forecasting: principles and practice},
+  edition={3rd},
+  author={Hyndman, R.J. and Athanasopoulos, G.},
+  year={2021},
+  url={https://OTexts.com/fpp3},
+  accessed={Accessed on 2021-04-26>}
+}
+
+@book{west2022,
+  title={Linear mixed models: a practical guide using statistical software},
+  author={West, Brady T and Welch, Kathleen B and Galecki, Andrzej T},
+  year={2022},
+  publisher={Crc Press}
+}
+
+@article{rue2009,
+author = {Rue, Håvard and Martino, Sara and Chopin, Nicolas},
+title = {Approximate Bayesian inference for latent Gaussian models by using integrated nested Laplace approximations},
+journal = {Journal of the Royal Statistical Society: Series B (Statistical Methodology)},
+volume = {71},
+number = {2},
+pages = {319-392},
+keywords = {Approximate Bayesian inference, Gaussian Markov random fields, Generalized additive mixed models, Laplace approximation, Parallel computing, Sparse matrices, Structured additive regression models},
+doi = {doi.org/10.1111/j.1467-9868.2008.00700.x},
+url = {https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-9868.2008.00700.x},
+eprint = {https://rss.onlinelibrary.wiley.com/doi/pdf/10.1111/j.1467-9868.2008.00700.x},
+abstract = {Summary.  Structured additive regression models are perhaps the most commonly used class of models in statistical applications. It includes, among others, (generalized) linear models, (generalized) additive models, smoothing spline models, state space models, semiparametric regression, spatial and spatiotemporal models, log-Gaussian Cox processes and geostatistical and geoadditive models. We consider approximate Bayesian inference in a popular subset of structured additive regression models, latent Gaussian models, where the latent field is Gaussian, controlled by a few hyperparameters and with non-Gaussian response variables. The posterior marginals are not available in closed form owing to the non-Gaussian response variables. For such models, Markov chain Monte Carlo methods can be implemented, but they are not without problems, in terms of both convergence and computational time. In some practical applications, the extent of these problems is such that Markov chain Monte Carlo sampling is simply not an appropriate tool for routine analysis. We show that, by using an integrated nested Laplace approximation and its simplified version, we can directly compute very accurate approximations to the posterior marginals. The main benefit of these approximations is computational: where Markov chain Monte Carlo algorithms need hours or days to run, our approximations provide more precise estimates in seconds or minutes. Another advantage with our approach is its generality, which makes it possible to perform Bayesian analysis in an automatic, streamlined way, and to compute model comparison criteria and various predictive measures so that models can be compared and the model under study can be challenged.},
+year = {2009}
+}
+
+@article{Bakka2018,
+author = {Bakka, Haakon and Rue, Håvard and Fuglstad, Geir-Arne and Riebler, Andrea and Bolin, David and Illian, Janine and Krainski, Elias and Simpson, Daniel and Lindgren, Finn},
+title = {Spatial modeling with R-INLA: A review},
+journal = {WIREs Computational Statistics},
+volume = {10},
+number = {6},
+pages = {e1443},
+keywords = {approximate Bayesian inference, Gaussian Markov random fields, Laplace approximations, sparse matrices, spatial statistics, stochastic partial differential equations},
+doi = {doi.org/10.1002/wics.1443},
+url = {https://wires.onlinelibrary.wiley.com/doi/abs/10.1002/wics.1443},
+eprint = {https://wires.onlinelibrary.wiley.com/doi/pdf/10.1002/wics.1443},
+abstract = {Coming up with Bayesian models for spatial data is easy, but performing inference with them can be challenging. Writing fast inference code for a complex spatial model with realistically-sized datasets from scratch is time-consuming, and if changes are made to the model, there is little guarantee that the code performs well. The key advantages of R-INLA are the ease with which complex models can be created and modified, without the need to write complex code, and the speed at which inference can be done even for spatial problems with hundreds of thousands of observations. R-INLA handles latent Gaussian models, where fixed effects, structured and unstructured Gaussian random effects are combined linearly in a linear predictor, and the elements of the linear predictor are observed through one or more likelihoods. The structured random effects can be both standard areal model such as the Besag and the BYM models, and geostatistical models from a subset of the Matérn Gaussian random fields. In this review, we discuss the large success of spatial modeling with R-INLA and the types of spatial models that can be fitted, we give an overview of recent developments for areal models, and we give an overview of the stochastic partial differential equation (SPDE) approach and some of the ways it can be extended beyond the assumptions of isotropy and separability. In particular, we describe how slight changes to the SPDE approach leads to straight-forward approaches for nonstationary spatial models and nonseparable space–time models. This article is categorized under: Statistical and Graphical Methods of Data Analysis > Bayesian Methods and Theory Statistical Models > Bayesian Models Data: Types and Structure > Massive Data},
+year = {2018}
+}
+
+@article{VanNiekerk2023,
+title = {A new avenue for Bayesian inference with INLA},
+journal = {Computational Statistics & Data Analysis},
+volume = {181},
+pages = {107692},
+year = {2023},
+issn = {0167-9473},
+doi = {10.1016/j.csda.2023.107692},
+url = {https://www.sciencedirect.com/science/article/pii/S0167947323000038},
+author = {Janet {Van Niekerk} and Elias Krainski and Denis Rustand and Håvard Rue},
+keywords = {INLA, Item-response theory, Latent Gaussian model, SPDE, Survival analysis, Variational Bayes},
+abstract = {Integrated Nested Laplace Approximations (INLA) has been a successful approximate Bayesian inference framework since its proposal by Rue et al. (2009). The increased computational efficiency and accuracy when compared with sampling-based methods for Bayesian inference like MCMC methods, are some contributors to its success. Ongoing research in the INLA methodology and implementation thereof in the R package R-INLA, ensures continued relevance for practitioners and improved performance and applicability of INLA. The era of big data and some recent research developments, presents an opportunity to reformulate some aspects of the classic INLA formulation, to achieve even faster inference, improved numerical stability and scalability. The improvement is especially noticeable for data-rich models. Various examples of data-rich models, like Cox's proportional hazards model, an item-response theory model, a spatial model including prediction, and a three-dimensional model for fMRI data are used to illustrate the efficiency gains in a tangible manner.}
+}
+
+@article {Anderson2022,
+	author = {Anderson, Sean C. and Ward, Eric J. and English, Philina A. and Barnett, Lewis A. K. and Thorson, James T.},
+	title = {sdmTMB: An R Package for Fast, Flexible, and User-Friendly Generalized Linear Mixed Effects Models with Spatial and Spatiotemporal Random Fields},
+	elocation-id = {2022.03.24.485545},
+	year = {2024},
+	doi = {10.1101/2022.03.24.485545},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {Geostatistical spatial or spatiotemporal data are common across scientific fields. However, appropriate models to analyse these data, such as generalised linear mixed effects models (GLMMs) with Gaussian Markov random fields (GMRFs), are computationally intensive and challenging for many users to implement. Here, we introduce the R package sdmTMB, which extends the flexible interface familiar to users of lme4, glmmTMB, and mgcv to include spatial and spatiotemporal latent GMRFs using an SPDE-(stochastic partial differential equation) based approach. SPDE matrices are constructed with fmesher and estimation is conducted via maximum marginal likelihood with TMB or via Bayesian inference with tmbstan and rstan. We describe the model and explore case studies that illustrate sdmTMB{\textquoteright}s flexibility in implementing penalised smoothers, non-stationary processes (time-varying and spatially varying coefficients), hurdle models, cross-validation and anisotropy (directionally dependent spatial correlation). Finally, we compare the functionality, speed, and interfaces of related software, demonstrating that sdmTMB can be an order of magnitude faster than R-INLA. We hope sdmTMB will help open this useful class of models to a wider field of geostatistical analysts.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2024/07/18/2022.03.24.485545},
+	eprint = {https://www.biorxiv.org/content/early/2024/07/18/2022.03.24.485545.full.pdf},
+	journal = {bioRxiv}
+}
+
+@article{Langbehn2023,
+author = {Langbehn, Tom J. and Aarflot, Johanna M. and Freer, Jennifer J. and Varpe, Øystein},
+title = {Visual predation risk and spatial distributions of large Arctic copepods along gradients of sea ice and bottom depth},
+journal = {Limnology and Oceanography},
+volume = {68},
+number = {6},
+pages = {1388-1405},
+doi = {10.1002/lno.12354},
+url = {https://aslopubs.onlinelibrary.wiley.com/doi/abs/10.1002/lno.12354},
+eprint = {https://aslopubs.onlinelibrary.wiley.com/doi/pdf/10.1002/lno.12354},
+abstract = {Abstract Changes in the community size structure of Arctic copepods toward smaller and less fat individuals or species have been linked to environmental changes. The underpinning mechanisms are, however, poorly understood. We use a two-step hurdle regression model to analyze spatially resolved, long-term survey data of the Barents Sea mesozooplankton community along gradients of water mass properties, sea ice, and bottom depth. We test the hypothesis that reduced visual predation, and hence increased survival in dim habitats, explains the distribution of large copepods. We expect the presence and biomass of large copepods to increase with increasing bottom depth and the occurrence of seasonal ice-cover. The patterns and drivers that emerge from our analysis support our hypothesis: in the Barents Sea large copepods were predominantly found in deep troughs that intersect the shelf south of the polar front, or at shallower depths in seasonally ice-covered waters northeast of Svalbard. On the banks, large copepods are largely absent whereas smaller copepods appear to survive. Top-down control provides one plausible explanation for these distributions. Large copepods survive where sea-ice shades the water or deep habitats permit escape from visual predators through vertical migrations. However, when upwelled onto shallow banks or flushed out from below the ice they are decimated by visual foragers. Therefore, advection and topographic blockage of vertical zooplankton distributions are key mechanisms for the efficient energy transfer and productivity in subarctic and Arctic shelf seas. New prolific foraging grounds may open up for planktivores where the ice-edge recedes under a changing climate.},
+year = {2023}
+}

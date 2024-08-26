@@ -1,0 +1,137 @@
+---
+title: "Mô hình hỗn hợp (Mixed-effects model) 2"
+description: |
+  Mô hình hỗn hợp (Mixed-effects model) 2
+author:
+  - name: Bùi Tuấn Anh
+    url: https://bui-tuananh.github.io
+date: '2024-07-31'
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+tags: [tag1, tag2] #for search
+categories:
+  - cat1
+  - cat2
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+# library(broom)
+library(kableExtra)
+# library(visibly)
+library(glmmTMB)
+library(reactable)
+library(patchwork)
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+## Giới thiệu
+
+> Mô hình hỗn độn (mixed-effects models) là một trong những công cụ hiệu
+> quả và được sử dụng phổ biến để phân tích dữ liệu có yếu tố phụ thuộc
+> (các quan sát từ cùng một quần thể, cá thể, thời gian, hoặc không
+> gian) mà chúng ta thương thấy trong sinh thái học.
+
+Trong bài viết *Mô hình hỗn hợp (Mixed-effects model) 1* mình đã giới
+thiệu về các thành phần của mô hình hỗn hợp (Phương trình
+\@ref(eq:mix-model)), trong đó thành phần ảnh hưởng ngẫu nhiên bao gồm
+hệ số chặn ngẫu nhiên $a$ (randon intercept), hệ số hồi quy ngẫu nhiên
+$b$ (random slope) và các hiệu ứng ngẫu nhiên khác như không gian và
+thời gian $f(.)$.
+
+```{=tex}
+\begin{equation}
+y = \alpha + \beta_1x_1 + \dots + \beta_nx_n + (a^a + \dots + a^z + b^ax_1 + \dots + b^zx_n + f(.)) + \varepsilon (\#eq:mix-model)
+\end{equation}
+```
+Trong bài viết này, mình sẽ giới thiệu kỹ hơn về hệ số chặn ngẫu nhiên
+và hệ số hồi quy ngẫu nhiên. Trước hết, mình sẽ minh họa sự khác biệt
+giữa hệ số chặn ngẫu nhiên và hệ số hồi quy ngẫu nhiên. Sau đó, mình sẽ
+đưa ra hai ví dụ cho việc áp dụng mô hình hỗn hợp với cả hệ số chặn ngẫu
+nhiên và hệ số hồi quy ngẫu nhiên. Dữ liệu trong hai ví dụ sẽ được giả
+lập để kiểm soát cấu trúc dữ liệu, tương tự như trong bài viết trước.
+
+## Sự khác biệt giữa hệ số chặn ngẫu nhiên và hệ số hồi quy ngẫu nhiên
+
+Để minh họa cho sự khác nhau giữa hệ số chặn ngẫu nhiên và hệ số hồi quy
+ngẫu nhiên, mình sẽ dùng 3 hình sau:
+
+```{r fig1, echo=FALSE, fig.cap="Biểu đồ mô tả các thành phần của mô hình hỗn hợp"}
+set.seed(100) #2
+n_pop = 10
+df_sim <- tibble(pop = rep(factor(seq(1,n_pop)), each = 100),
+             pop_name = paste("Quần thể", pop),
+             temp = rep(rnorm(100, mean = c(3), sd = 1), n_pop),
+             length_fixed = 100 - 5*temp,
+             random_int = rep(rnorm(n_pop, mean = 0, sd = 10), each = 100),
+             length_pop_int = 100 - 5*temp + random_int,
+             random_slope = rep(rnorm(n_pop, mean = 0, sd = 3), each = 100),
+             length_pop_slope = 100 - 5*temp + random_slope*temp,
+             length_pop = 100 - 5*temp + random_int + random_slope*temp,
+             random_error = rnorm(n_pop*100, mean = 0, sd = 1),
+             length = 100 - 5*temp + random_int + random_slope*temp + random_error,
+             )
+
+# df <- df_sim %>% 
+#   select(pop_name, temp, length)
+# 
+# lme <- glmmTMB(length ~ temp + (1 | pop_name), data = df_sim)                
+
+
+ggplot() +
+  # obs
+  #geom_point(data = df_sim, aes(x = temp, y = length, color = pop_name)) +
+  # fixed effect
+  geom_line(data = df_sim, aes(x = temp, y = length_fixed)) +
+  # random effect
+  geom_line(data = df_sim, aes(x = temp, y = length_pop_int, color = pop_name)) +
+  #geom_line(data = df_sim, aes(x = temp, y = length_pop_slope, color = pop_name), linetype = "dashed") +
+  labs(x = "Nhiệt độ (\u00b0C)",
+       y = "Chiều dài cơ thể cá (cm)",
+       color = NULL)
+```
+
+Tương tự như ở bài viết trước, mình sẽ sử dụng dữ liệu giả lập trong các
+ví dụ trong bài viết này.
+
+-   minh họa hệ số chặn ngẫu nhiên và hệ số hồi quy ngẫu nhiên
+
+-   áp dụng mô hình
+
+    -   ví dụ 1: dữ liệu có cả hệ số chặn ngẫu nhiên và hệ số hồi quy
+        ngẫu nhiên
+
+    -   ví dụ 2: dữ liệu chỉ có hệ số chặn ngẫu nhiên

@@ -1,0 +1,103 @@
+---
+title: "Template blog"
+# description: |
+#   Template blog
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-07-20'
+citation: false  
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+tags: [tag1, tag2] #for search
+categories:
+  - cat1
+  - cat2
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+library(broom)
+library(kableExtra)
+# library(visibly)
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+## Heading
+
+> Some highlight info
+
+Text with link [CV Tuấn Anh](https://bui-tuananh.github.io/)
+
+Text with foot note [^1].
+
+[^1]: Desc note 1
+
+Text with highlight (class "pack" in styles.css) [highlight]{.pack
+style=""}
+
+Text in bold *bold*
+
+Math formula in line $a^2 = b^2 + c^2$
+
+Math formulate separate line
+$$y_t = \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + \varepsilon_t$$
+
+Text with ref @Author2024 @Hyndman2021
+
+Text with style function [function]{.func style=""} 
+
+r-code
+
+```{r r-code, cache=FALSE}
+# Data Processing
+
+library(tidyverse)
+library(lubridate)
+```
+
+r-code for table
+
+```{r arima-xreg-performance, echo=FALSE}
+# validation
+# data.frame(
+#     pred = preds, 
+#     observed = red_line_validate$rides_scaled
+#   ) %>%
+#   metric_score(truth = observed, estimate = pred) %>% 
+#   kable_df()
+```
+
+
