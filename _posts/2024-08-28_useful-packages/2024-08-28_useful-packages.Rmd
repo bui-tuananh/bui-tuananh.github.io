@@ -63,65 +63,80 @@ các nhóm chức năng.
 
 Tải/lưu dữ liệu:
 
--   *readr*: tải dữ liệu dạng bảng như các file có đuôi .csv, .txt, hoặc
-    file R như .rds. readr cũng có các hàm để lưu dữ liệu ở các định
-    dạng khác nhau
+-   [*readr*](https://readr.tidyverse.org/): tải dữ liệu dạng bảng như
+    các file có đuôi .csv, .txt, hoặc file R như .rds. readr cũng có các
+    hàm để lưu dữ liệu ở các định dạng khác nhau
 
--   *readxl*: đọc dữ liệu Excel (.xls, .xlsx)
+-   [*readxl*](https://readxl.tidyverse.org/): đọc dữ liệu Excel (.xls,
+    .xlsx)
 
--   *writexl:* lưu dữ liệu Excel (.xls, .xlsx)
+-   [*writexl*](https://docs.ropensci.org/writexl/)*:* lưu dữ liệu Excel
+    (.xls, .xlsx)
 
 Xử lý dữ liệu:
 
 -   Dữ liệu dạng bảng
 
-    -   *tidyr*: tạo dữ liệu dạng bảng
+    -   [*tidyr*](https://tidyr.tidyverse.org/): tạo dữ liệu dạng bảng
 
-    -   *dplyr*: xử lý dữ liệu với các hàm như summarize() (tổng hợp),
-        group_by() (nhóm), filter() (lọc theo hàng), select() (lọc theo
-        cột), ...
+    -   [*dplyr*](https://dplyr.tidyverse.org/): xử lý dữ liệu với các
+        hàm như summarize() (tổng hợp), group_by() (nhóm), filter() (lọc
+        theo hàng), select() (lọc theo cột), ...
 
-    -   *lubridate*: xử lý dữ liệu dạng ngày tháng
+    -   [*lubridate*](https://lubridate.tidyverse.org/): xử lý dữ liệu
+        dạng ngày tháng
 
-    -   *stringr*: xử lý dữ liệu dạng chuỗi ký tự/chữ (string)
+    -   [*stringr*](https://stringr.tidyverse.org/): xử lý dữ liệu dạng
+        chuỗi ký tự/chữ (string)
 
 -   Dữ liệu không gian
 
-    -   *sf:* xử lý dữ liệu không gian dạng vector
+    -   [*sf*](https://r-spatial.github.io/sf/)*:* xử lý dữ liệu không
+        gian dạng vector
 
-    -   *stars*: xử lý dữ liệu không gian dạng raster. Ngoài *stars* thì
-        còn có *terra* cũng rất tốt nhưng mình thích dùng *stars* hơn vì
-        có thể tương tác trực tiếp với dữ liệu vector được xử lý bằng
-        *sf*
+    -   [*stars*](https://r-spatial.github.io/stars/): xử lý dữ liệu
+        không gian dạng raster. Ngoài *stars* thì còn có *terra* cũng
+        rất tốt nhưng mình thích dùng *stars* hơn vì có thể tương tác
+        trực tiếp với dữ liệu vector được xử lý bằng *sf*
 
 Phân tích dữ liệu:
 
--   *lme4*: phân tích mô hình hỗn hợp (mixed-effects model)
+-   [*lme4*](https://github.com/lme4/lme4/): phân tích mô hình hỗn hợp
+    (mixed-effects model)
 
--   *glmmTMB*: phân tích mô hình hỗn hợp, tương tự như lme4, nhưng có
-    một số cấu trúc mô hình phức tạp hơn
+-   [*glmmTMB*](https://github.com/glmmTMB/glmmTMB): phân tích mô hình
+    hỗn hợp, tương tự như lme4, nhưng có một số cấu trúc mô hình phức
+    tạp hơn
 
--   *MuMIn*: so sánh mô hình được xây dựng từ thư viện *lme4* và
-    *glmmTMB*
+-   [*MuMIn*](https://cran.r-project.org/web/packages/MuMIn/index.html):
+    so sánh mô hình được xây dựng từ thư viện *lme4* và *glmmTMB*
 
--   *INLA* hoặc *sdmTMB*: phân tích mô hình không gian và/hoặc thời
-    gian. *sdmTMB* là một thư viện mới hơn so với INLA và được đánh giá
-    có thời gian chạy mô hình ngắn hơn nhiều so với *INLA*.
+-   [*INLA*](https://www.r-inla.org/) hoặc
+    [*sdmTMB*](https://pbs-assess.github.io/sdmTMB/): phân tích mô hình
+    không gian và/hoặc thời gian. *sdmTMB* là một thư viện mới hơn so
+    với INLA và được đánh giá có thời gian chạy mô hình ngắn hơn nhiều
+    so với *INLA*.
 
--   *TMB* và *RTMB*: xây dựng mô hình không có sẵn trong các thư viện ở
-    trên, ví dụ mô hình phát triển (growth model) như von Bertalanffy's,
-    Lester's, hoặc Quince's models. Mình dùng *RTMB* để phát triển mô
-    hìnhvì *TMB* dùng code C++, nhưng mình dùng *TMB* khi chạy mô hình
-    vì nhanh hơn.
+-   [*TMB*](https://github.com/kaskr/adcomp/wiki) và
+    [*RTMB*](https://github.com/kaskr/RTMB): xây dựng mô hình không có
+    sẵn trong các thư viện ở trên, ví dụ mô hình phát triển (growth
+    model) như von Bertalanffy's, Lester's, hoặc Quince's models. Mình
+    dùng *RTMB* để phát triển mô hìnhvì *TMB* dùng code C++, nhưng mình
+    dùng *TMB* khi chạy mô hình vì nhanh hơn.
 
 Trực quan hóa dữ liệu
 
--   *ggplot2*: trực quan hóa (hầu hết) tất cả các dạng dữ liệu
+-   [*ggplot2*](https://ggplot2.tidyverse.org/): trực quan hóa (hầu hết)
+    tất cả các dạng dữ liệu
 
--   *patchwork*: tổng hợp các đồ thị tạo bởi *ggplot2* vào với nhau
+-   [*patchwork*](https://patchwork.data-imaginist.com/index.html): tổng
+    hợp các đồ thị tạo bởi *ggplot2* vào với nhau
 
--   tmap: trực quan hóa dữ liệu không gian
+-   [*tmap*](https://r-tmap.github.io/tmap/): trực quan hóa dữ liệu
+    không gian
 
--   *effects*: trực quan hóa kết quả phân tích từ *lme4* và *glmmTMB*
+-   [*effects*](https://cran.r-project.org/web/packages/effects/index.html):
+    trực quan hóa kết quả phân tích từ *lme4* và *glmmTMB*
 
--   *sjPlot*: trình bày dữ liệu hoặc kết quả phân tích ở dạng bảng
+-   [*sjPlot*](https://strengejacke.github.io/sjPlot/): trình bày dữ
+    liệu hoặc kết quả phân tích ở dạng bảng

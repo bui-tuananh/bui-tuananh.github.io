@@ -93,8 +93,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2024-08-29"/>
-  <meta property="article:created" itemprop="dateCreated" content="2024-08-29"/>
+  <meta property="article:published" itemprop="datePublished" content="2024-09-02"/>
+  <meta property="article:created" itemprop="dateCreated" content="2024-09-02"/>
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
   <meta property="og:title" content="R 101 | Các thư viện mình hay dùng"/>
@@ -110,12 +110,12 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","citation","output","bibliography","draft","tags","categories","editor_options","date"]}},"value":[{"type":"character","attributes":{},"value":["R 101 | Các thư viện mình hay dùng"]},{"type":"logical","attributes":{},"value":[false]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css","df_print"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]},{"type":"character","attributes":{},"value":["kable_df"]}]}]},{"type":"character","attributes":{},"value":["../../bibs/bib.bib"]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["R 101"]},{"type":"character","attributes":{},"value":["R 101"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["markdown"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["wrap"]}},"value":[{"type":"integer","attributes":{},"value":[72]}]}]},{"type":"character","attributes":{},"value":["08-29-2024"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","citation","output","bibliography","draft","tags","categories","editor_options","date"]}},"value":[{"type":"character","attributes":{},"value":["R 101 | Các thư viện mình hay dùng"]},{"type":"logical","attributes":{},"value":[false]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css","df_print"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]},{"type":"character","attributes":{},"value":["kable_df"]}]}]},{"type":"character","attributes":{},"value":["../../bibs/bib.bib"]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["R 101"]},{"type":"character","attributes":{},"value":["R 101"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["markdown"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["wrap"]}},"value":[{"type":"integer","attributes":{},"value":[72]}]}]},{"type":"character","attributes":{},"value":["09-02-2024"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"NULL"}
+  {"type":"character","attributes":{},"value":["2024-08-28_useful-packages_files/anchor-4.2.2/anchor.min.js","2024-08-28_useful-packages_files/bowser-1.9.3/bowser.min.js","2024-08-28_useful-packages_files/distill-2.2.21/template.v2.js","2024-08-28_useful-packages_files/header-attrs-2.25/header-attrs.js","2024-08-28_useful-packages_files/jquery-3.6.0/jquery-3.6.0.js","2024-08-28_useful-packages_files/jquery-3.6.0/jquery-3.6.0.min.js","2024-08-28_useful-packages_files/jquery-3.6.0/jquery-3.6.0.min.map","2024-08-28_useful-packages_files/popper-2.6.0/popper.min.js","2024-08-28_useful-packages_files/tippy-6.2.7/tippy-bundle.umd.min.js","2024-08-28_useful-packages_files/tippy-6.2.7/tippy-light-border.css","2024-08-28_useful-packages_files/tippy-6.2.7/tippy.css","2024-08-28_useful-packages_files/tippy-6.2.7/tippy.umd.min.js","2024-08-28_useful-packages_files/webcomponents-2.0.0/webcomponents.js"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
   <!--/radix_placeholder_navigation_in_header-->
@@ -1519,7 +1519,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"R 101 | Các thư viện mình hay dùng","authors":[],"publishedDate":"2024-08-29T00:00:00.000+02:00"}
+{"title":"R 101 | Các thư viện mình hay dùng","authors":[],"publishedDate":"2024-09-02T00:00:00.000+02:00"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -1546,55 +1546,70 @@ làm việc trên R dễ dàng hơn. Sau đây là các thư viện mình hay d�
 các nhóm chức năng.</p>
 <p>Tải/lưu dữ liệu:</p>
 <ul>
-<li><p><em>readr</em>: tải dữ liệu dạng bảng như các file có đuôi .csv, .txt, hoặc
-file R như .rds. readr cũng có các hàm để lưu dữ liệu ở các định
-dạng khác nhau</p></li>
-<li><p><em>readxl</em>: đọc dữ liệu Excel (.xls, .xlsx)</p></li>
-<li><p><em>writexl:</em> lưu dữ liệu Excel (.xls, .xlsx)</p></li>
+<li><p><a href="https://readr.tidyverse.org/"><em>readr</em></a>: tải dữ liệu dạng bảng như
+các file có đuôi .csv, .txt, hoặc file R như .rds. readr cũng có các
+hàm để lưu dữ liệu ở các định dạng khác nhau</p></li>
+<li><p><a href="https://readxl.tidyverse.org/"><em>readxl</em></a>: đọc dữ liệu Excel (.xls,
+.xlsx)</p></li>
+<li><p><a href="https://docs.ropensci.org/writexl/"><em>writexl</em></a><em>:</em> lưu dữ liệu Excel
+(.xls, .xlsx)</p></li>
 </ul>
 <p>Xử lý dữ liệu:</p>
 <ul>
 <li><p>Dữ liệu dạng bảng</p>
 <ul>
-<li><p><em>tidyr</em>: tạo dữ liệu dạng bảng</p></li>
-<li><p><em>dplyr</em>: xử lý dữ liệu với các hàm như summarize() (tổng hợp),
-group_by() (nhóm), filter() (lọc theo hàng), select() (lọc theo
-cột), …</p></li>
-<li><p><em>lubridate</em>: xử lý dữ liệu dạng ngày tháng</p></li>
-<li><p><em>stringr</em>: xử lý dữ liệu dạng chuỗi ký tự/chữ (string)</p></li>
+<li><p><a href="https://tidyr.tidyverse.org/"><em>tidyr</em></a>: tạo dữ liệu dạng bảng</p></li>
+<li><p><a href="https://dplyr.tidyverse.org/"><em>dplyr</em></a>: xử lý dữ liệu với các
+hàm như summarize() (tổng hợp), group_by() (nhóm), filter() (lọc
+theo hàng), select() (lọc theo cột), …</p></li>
+<li><p><a href="https://lubridate.tidyverse.org/"><em>lubridate</em></a>: xử lý dữ liệu
+dạng ngày tháng</p></li>
+<li><p><a href="https://stringr.tidyverse.org/"><em>stringr</em></a>: xử lý dữ liệu dạng
+chuỗi ký tự/chữ (string)</p></li>
 </ul></li>
 <li><p>Dữ liệu không gian</p>
 <ul>
-<li><p><em>sf:</em> xử lý dữ liệu không gian dạng vector</p></li>
-<li><p><em>stars</em>: xử lý dữ liệu không gian dạng raster. Ngoài <em>stars</em> thì
-còn có <em>terra</em> cũng rất tốt nhưng mình thích dùng <em>stars</em> hơn vì
-có thể tương tác trực tiếp với dữ liệu vector được xử lý bằng
-<em>sf</em></p></li>
+<li><p><a href="https://r-spatial.github.io/sf/"><em>sf</em></a><em>:</em> xử lý dữ liệu không
+gian dạng vector</p></li>
+<li><p><a href="https://r-spatial.github.io/stars/"><em>stars</em></a>: xử lý dữ liệu
+không gian dạng raster. Ngoài <em>stars</em> thì còn có <em>terra</em> cũng
+rất tốt nhưng mình thích dùng <em>stars</em> hơn vì có thể tương tác
+trực tiếp với dữ liệu vector được xử lý bằng <em>sf</em></p></li>
 </ul></li>
 </ul>
 <p>Phân tích dữ liệu:</p>
 <ul>
-<li><p><em>lme4</em>: phân tích mô hình hỗn hợp (mixed-effects model)</p></li>
-<li><p><em>glmmTMB</em>: phân tích mô hình hỗn hợp, tương tự như lme4, nhưng có
-một số cấu trúc mô hình phức tạp hơn</p></li>
-<li><p><em>MuMIn</em>: so sánh mô hình được xây dựng từ thư viện <em>lme4</em> và
-<em>glmmTMB</em></p></li>
-<li><p><em>INLA</em> hoặc <em>sdmTMB</em>: phân tích mô hình không gian và/hoặc thời
-gian. <em>sdmTMB</em> là một thư viện mới hơn so với INLA và được đánh giá
-có thời gian chạy mô hình ngắn hơn nhiều so với <em>INLA</em>.</p></li>
-<li><p><em>TMB</em> và <em>RTMB</em>: xây dựng mô hình không có sẵn trong các thư viện ở
-trên, ví dụ mô hình phát triển (growth model) như von Bertalanffy’s,
-Lester’s, hoặc Quince’s models. Mình dùng <em>RTMB</em> để phát triển mô
-hìnhvì <em>TMB</em> dùng code C++, nhưng mình dùng <em>TMB</em> khi chạy mô hình
-vì nhanh hơn.</p></li>
+<li><p><a href="https://github.com/lme4/lme4/"><em>lme4</em></a>: phân tích mô hình hỗn hợp
+(mixed-effects model)</p></li>
+<li><p><a href="https://github.com/glmmTMB/glmmTMB"><em>glmmTMB</em></a>: phân tích mô hình
+hỗn hợp, tương tự như lme4, nhưng có một số cấu trúc mô hình phức
+tạp hơn</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/MuMIn/index.html"><em>MuMIn</em></a>:
+so sánh mô hình được xây dựng từ thư viện <em>lme4</em> và <em>glmmTMB</em></p></li>
+<li><p><a href="https://www.r-inla.org/"><em>INLA</em></a> hoặc
+<a href="https://pbs-assess.github.io/sdmTMB/"><em>sdmTMB</em></a>: phân tích mô hình
+không gian và/hoặc thời gian. <em>sdmTMB</em> là một thư viện mới hơn so
+với INLA và được đánh giá có thời gian chạy mô hình ngắn hơn nhiều
+so với <em>INLA</em>.</p></li>
+<li><p><a href="https://github.com/kaskr/adcomp/wiki"><em>TMB</em></a> và
+<a href="https://github.com/kaskr/RTMB"><em>RTMB</em></a>: xây dựng mô hình không có
+sẵn trong các thư viện ở trên, ví dụ mô hình phát triển (growth
+model) như von Bertalanffy’s, Lester’s, hoặc Quince’s models. Mình
+dùng <em>RTMB</em> để phát triển mô hìnhvì <em>TMB</em> dùng code C++, nhưng mình
+dùng <em>TMB</em> khi chạy mô hình vì nhanh hơn.</p></li>
 </ul>
 <p>Trực quan hóa dữ liệu</p>
 <ul>
-<li><p><em>ggplot2</em>: trực quan hóa (hầu hết) tất cả các dạng dữ liệu</p></li>
-<li><p><em>patchwork</em>: tổng hợp các đồ thị tạo bởi <em>ggplot2</em> vào với nhau</p></li>
-<li><p>tmap: trực quan hóa dữ liệu không gian</p></li>
-<li><p><em>effects</em>: trực quan hóa kết quả phân tích từ <em>lme4</em> và <em>glmmTMB</em></p></li>
-<li><p><em>sjPlot</em>: trình bày dữ liệu hoặc kết quả phân tích ở dạng bảng</p></li>
+<li><p><a href="https://ggplot2.tidyverse.org/"><em>ggplot2</em></a>: trực quan hóa (hầu hết)
+tất cả các dạng dữ liệu</p></li>
+<li><p><a href="https://patchwork.data-imaginist.com/index.html"><em>patchwork</em></a>: tổng
+hợp các đồ thị tạo bởi <em>ggplot2</em> vào với nhau</p></li>
+<li><p><a href="https://r-tmap.github.io/tmap/"><em>tmap</em></a>: trực quan hóa dữ liệu
+không gian</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/effects/index.html"><em>effects</em></a>:
+trực quan hóa kết quả phân tích từ <em>lme4</em> và <em>glmmTMB</em></p></li>
+<li><p><a href="https://strengejacke.github.io/sjPlot/"><em>sjPlot</em></a>: trình bày dữ
+liệu hoặc kết quả phân tích ở dạng bảng</p></li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
