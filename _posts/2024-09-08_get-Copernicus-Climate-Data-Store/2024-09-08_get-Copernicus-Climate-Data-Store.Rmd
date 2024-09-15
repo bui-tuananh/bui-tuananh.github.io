@@ -172,8 +172,7 @@ file <- wf_request(
 getwd()
 ```
 
-5.  Đọc file sau khi đã tải xong: file được giải nén từ oras5.zip. Do
-    file lớn nên mình
+5.  Đọc file sau khi đã tải xong: file được giải nén từ oras5.zip.
 
 ```{r}
 oras5 <- read_ncdf("./sosstsst_control_monthly_highres_2D_200001_CONS_v0.1.nc")
