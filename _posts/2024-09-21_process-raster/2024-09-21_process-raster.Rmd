@@ -1,0 +1,252 @@
+---
+title: "Xử lý dữ liệu raster"
+#description: |
+#  Description
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-08-22'
+citation: false  
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+#tags: [R 101] #for search
+categories:
+  - Xử lý dữ liệu
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(ecmwfr)    # tải dữ liệu cds
+library(tidyverse) # xử lý và trực quan hóa dữ liệu
+library(sf)        # xử lý dữ liệu không gian dạng vector
+library(stars)     # xử lý dữ liệu không gian dạng raster
+# library(broom)
+library(kableExtra)
+# library(visibly)
+#library(glmmTMB)
+library(reactable)
+library(patchwork)
+
+
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+# Giới thiệu
+
+Trong bài viết này mình sẽ chia sẻ sử dụng thư viện
+[*stars*](https://r-spatial.github.io/stars/) để xử lý dữ liệu không
+gian dạng raster với một số thao tác thường dùng như:
+
+1.  Đọc dữ liệu
+2.  Đổi hệ quy chiếu
+3.  Cắt dữ liệu theo bounding box
+4.  Cắt dữ liệu theo polygon
+5.  Trích xuất dữ liệu theo polygon
+6.  Trích xuất dữ liệu theo điểm
+7.  Lưu dữ liệu
+
+# Chuẩn bị
+
+1.  Tải các thư viện cần thiết
+
+```{r}
+library(tidyverse) # xử lý và trực quan hóa dữ liệu
+library(sf)        # xử lý dữ liệu không gian dạng vector
+library(stars)     # xử lý dữ liệu không gian dạng raster
+```
+
+2.  Dữ liệu raster: mình dùng dữ liệu nhiệt độ bề mặt nước biển tháng 1
+    năm 2000 được tải trong bài viết [Tải dữ liệu khí hậu từ Copernicus
+    Climate Data
+    Store](https://bui-tuananh.github.io/posts/2024-09-08_get-Copernicus-Climate-Data-Store/)
+3.  Dữ liệu vector: mình dùng dữ liệu khu bảo tồn của [The World
+    Database on Protected
+    Areas](https://www.protectedplanet.net/en/thematic-areas/wdpa?tab=WDPA)
+    tải từ
+    [UNEP-WCMC](https://data-gis.unep-wcmc.org/portal/home/item.html?id=1919c32890074ce5a589a1a99b48994b)
+
+```{r}
+pa <- read_sf("./khu-bao-ton-quoc-gia.geojson")
+
+ggplot() +
+  geom_sf(data = pa %>% filter(Ten %in% c("Côn Đảo"))) +
+  facet_wrap(~ Ten)
+```
+
+# Xử lý dữ liệu
+
+## Đọc dữ liệu 
+
+```{r}
+# Dữ liểu raster
+oras5 <- read_stars("./sosstsst_control_monthly_highres_2D_200001_CONS_v0.1.nc") #hoặc read_ncdf cho dữ liệu .nc
+
+oras5
+```
+
+-   dữ liệu ORAS5 có 3 chiều (dimensions): kinh độ (x), vĩ độ (y), và thời gian (time_counter); và 1 thuộc tính (attribute): nhiệt độ bề mặt nước biển (sostsst)
+
+-   vì dữ liệu ORAS5 có phạm vi toàn cầu nên để tiện hiển thị mình sẽ cắt quanh khu vực Việt Nam
+
+```{r}
+# cắt dữ liệu gần khu vực Việt Nam
+oras5_sub <- oras5[, 100:200, 500:600, ]
+# 100:200 là thứ tự chiều kinh độ x
+# 500:600 là thứ tự chiều vĩ độ y
+
+oras5_sub
+```
+
+-   dữ liệu sau khi cắt có phạm vi kinh độ 97.5°-122.5° và vĩ độ
+    0.26°-24.46°
+  
+## Đổi hệ quy chiếu 
+## Cắt dữ liệu theo bounding box
+## Cắt dữ liệu theo polygon
+
+```{r}
+# Dữ liểu vector
+pa <- read_sf("./khu-bao-ton-quoc-gia.geojson")
+
+pa
+```
+
+```{r}
+dir <- "D:/OneDrive - UGent/data/Admin/WDPA_WDOECM_Sep2024_Public"
+wdpa <- read_sf(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb"))
+#nc = st_read(system.file(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb"), package="sf"))
+#layer <- st_layers(system.file(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb", package = "sf"))$name[1]
+##wdpa
+#names(wdpa)
+
+sort(unique(wdpa$PARENT_ISO3))
+vietnam <- wdpa %>% filter(PARENT_ISO3 == "VNM")
+
+ggplot() +
+  geom_sf(data = vietnam %>% filter(NAME %in% c("Con Dao National Park"))) 
+```
+
+
+## Trích xuất dữ liệu theo polygon
+## Trích xuất dữ liệu theo điểm
+## Lưu dữ liệu
+
+
+
+```{r}
+# cắt dữ liệu gần khu vực Việt Nam
+oras5_sub <- oras5[, 100:200, 500:600, ]
+# 100:200 là thứ tự chiều kinh độ x
+# 500:600 là thứ tự chiều vĩ độ y
+
+oras5_sub 
+```
+
+-   dữ liệu sau khi cắt có phạm vi kinh độ 97.5°-122.5° và vĩ độ
+    0.26°-24.46°
+
+```{r}
+ggplot() +
+  geom_stars(data = oras5_sub) +
+  scale_fill_distiller(palette = "RdYlBu")
+```
+
+# Tải dữ liệu ERA5
+
+1.  Lấy API tải dữ liệu và chuyển đổi API tải dữ liệu từ python sang R
+    (tương tự như bước 1-2 ở phần Tải dữ liệu ORAS5). Các lựa chọn thuộc
+    tính của dữ liệu ở ERA5 bao gồm: kiểu dữ liệu (product type, theo
+    tháng hay theo giờ), biến (variable), năm (year), tháng (month),
+    thời gian (nếu dữ liệu theo giờ), phạm vi địa lý, định dạng dữ liệu.
+    Để ví dụ thì mình chọn như sau:
+
+    -   kiểu dữ liệu: theo tháng
+
+    -   biến: tổng lượng mưa (Total precipitation)
+
+    -   năm: 2000
+
+    -   tháng: 1-12
+
+    -   thời gian: không áp dụng
+
+    -   phạm vi địa lý: kinh độ 97.5°-122.5° và vĩ độ 0.26°-24.46°
+        (quanh khu vực Việt Nam tương tự như ở dữ liệu ORAS5)
+
+    -   định dạng dữ liệu: NetCDF4 (file .nc giống như ở dữ liệu ORAS5)
+
+2.  Nhập API và tải dữ liệu
+
+```{r}
+request <- list(
+  dataset_short_name = "reanalysis-era5-land-monthly-means",
+  product_type = "monthly_averaged_reanalysis",
+  variable = "total_precipitation",
+  year = "2000",
+  month = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"),
+  time = "00:00",
+  data_format = "netcdf",
+  download_format = "zip",
+  area = c(24.46, 97.5, 0.26, 122.5),
+  target = "era5.zip"
+)
+```
+
+```{r, eval=F, echo=T}
+file <- wf_request(
+ request  = request,  # API
+ transfer = TRUE,     # TRUE để tải file 
+ path     = "."       # Thư mục lưu file
+ )
+```
+
+3.  Đọc file (đã được giải nén)
+
+```{r}
+era5 <- read_ncdf("./data_0.nc")
+
+era5
+```
+
+-   dữ liệu ERA5 có 3 chiều (dimensions): kinh độ (longitude), vĩ độ
+    (latitude), và thời gian (valid_time); và 1 thuộc tính (attribute):
+    tổng lượng mưa (tp). Có 12 giá trị thời gian tương ứng với 12 tháng
+    của năm 2000.
+
+```{r}
+ggplot() +
+  geom_stars(data = era5) +
+  scale_fill_distiller(palette = "GnBu", na.value = "white") +
+  facet_wrap(~ valid_time)
+```
