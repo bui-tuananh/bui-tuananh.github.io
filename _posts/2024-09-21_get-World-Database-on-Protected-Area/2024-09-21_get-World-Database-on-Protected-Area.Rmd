@@ -1,0 +1,148 @@
+---
+title: "Tải dữ liệu khu bảo tồn từ The World Database on Protected Areas"
+#description: |
+#  Description
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-08-22'
+citation: false  
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+#tags: [R 101] #for search
+categories:
+  - Thu thập dữ liệu
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(ecmwfr)    # tải dữ liệu cds
+library(tidyverse) # xử lý và trực quan hóa dữ liệu
+library(sf)        # xử lý dữ liệu không gian dạng vector
+library(stars)     # xử lý dữ liệu không gian dạng raster
+# library(broom)
+library(kableExtra)
+# library(visibly)
+#library(glmmTMB)
+library(reactable)
+library(patchwork)
+
+
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+# Giới thiệu
+
+[The World Database on Protected
+Areas](https://www.protectedplanet.net/en/thematic-areas/wdpa?tab=WDPA)
+(WDPA) là một cơ sở dữ liệu mở về các khu bảo tồn trên toàn cầu. WDPA là
+một dự án hợp tác giữa UN Environment Programme và International Union
+for Conservation of Nature (IUCN) và được quản lý bởi UN Environment
+Programme World Conservation Monitoring Centre (UNEP-WCMC). Dữ liệu WDPA
+được cập nhật hàng tháng và có thể được tải trực tiếp từ trang
+[web](https://www.protectedplanet.net/en/thematic-areas/wdpa?tab=WDPA)
+hoặc qua thư viện [*wdpar*](https://github.com/prioritizr/wdpar)trên R.
+
+Nếu tải dữ liệu trực tiếp từ trang web thì dữ liệu sẽ có phạm vi toàn
+cầu với dung lượng rất lớn, còn nếu tải dữ liệu qua *wdpar* thì có thể
+tải dữ liệu riêng lẻ của từng quốc gia. Trong bài viết này, mình sẽ chia
+sẻ cách dùng *wdpar* để tải dữ liệu khu bảo tồn ở Việt Nam.
+
+# Chuẩn bị
+
+Tải thư viện *wdpar* và các thư viện khác
+
+```{r}
+library(wdpar)     # tải dữ liệu khu bảo tồn
+library(tidyverse) # xử lý và trực quan hóa dữ liệu
+library(sf)        # xử lý dữ liệu không gian dạng vector
+library(stars)     # xử lý dữ liệu không gian dạng raster
+library(tmap)      # hiển thị dữ liệu không gian
+
+# webdriver::install_phantomjs() # có thể phải cài PhantomJS để chạy các lệnh của wdpar
+```
+
+# Tải dữ liệu
+
+```{r}
+# Dữ liệu khu bảo tồn Việt Nam
+vietnam <- wdpa_fetch(
+  x = "Vietnam",       # Tên nước hoặc mã nước theo ISO3 (ví dụ VNM)
+  wait = TRUE,       
+  download_dir = "."   # Thư mục lưu file, "." nghĩa là sẽ lưu ở thư mục làm việc hiện tại  (working directory)
+)
+```
+
+```{r}
+vietnam
+```
+
+-   dữ liệu có 28 trường dữ liệu và 191 đối tượng
+
+Hiển thị toàn bộ dữ liệu
+
+```{r}
+ggplot() +
+  geom_sf(data = vietnam)
+```
+
+Hiển thị dữ liệu vườn quốc gia và khu bảo tồn biển Côn Đảo
+
+```{r}
+condao <- vietnam %>% filter(NAME == "Con Dao")
+
+ggplot() +
+  geom_sf(data = condao, aes(color = DESIG_ENG), fill = NA) 
+```
+
+-   có thể thấy ranh giới vườn quốc gia và khu bảo tồn không trùng khớp
+    nhau; việc này có thể do vấn đề hệ tọa độ (ví dụ dữ liệu ở hệ tọa độ
+    VN-2000 thường lệch so với dữ liệu ở hệ tọa độ WGS-84 khoảng 200m).
+
+Hiển thị dữ liệu vườn quốc gia và khu bảo tồn biển Côn Đảo với bản đồ
+nền (ESRI, OpenStreetMap)
+
+```{r}
+# sử dụng thư viện tmap
+tmap_mode(mode = "view") # thiết lập chế độ tương tác
+
+tm_shape(condao %>% filter(DESIG_ENG == "National Park")) +
+  tm_borders(col = "red") +
+  tm_shape(condao %>% filter(DESIG_ENG == "Marine Protected Area")) +
+  tm_borders(col = "blue")
+```
+
+-   có thể thấy cả ranh giới vườn quốc gia và khu bảo tồn có vẻ đều
+    không trùng khớp với ranh giới thực tế; dữ liệu cần được điều chỉnh
+    đúng với ranh giới thực tế trước khi sử dụng thực tế.
