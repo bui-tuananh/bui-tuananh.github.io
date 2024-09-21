@@ -143,6 +143,6 @@ tm_shape(condao %>% filter(DESIG_ENG == "National Park")) +
   tm_borders(col = "blue")
 ```
 
--   có thể thấy cả ranh giới vườn quốc gia và khu bảo tồn có vẻ đều
-    không trùng khớp với ranh giới thực tế; dữ liệu cần được điều chỉnh
-    đúng với ranh giới thực tế trước khi sử dụng thực tế.
+-   có thể thấy cả ranh giới vườn quốc gia và khu bảo tồn đều không
+    trùng khớp với theo bản đồ nền ở hệ tọa độ WGS-84; vì thế dữ liệu
+    cần được điều chỉnh đúng hệ tọa độ trước khi sử dụng thực tế.
