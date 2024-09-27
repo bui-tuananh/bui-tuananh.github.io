@@ -50,7 +50,8 @@ library(kableExtra)
 #library(glmmTMB)
 library(reactable)
 library(patchwork)
-
+library(tmap)      # hiển thị dữ liệu không gian
+library(readxl)    # đọc dữ liệu Excel
 
 
 kable_df <- function(..., digits=2) {
@@ -81,43 +82,67 @@ gian dạng raster với một số thao tác thường dùng như:
 1.  Tải các thư viện cần thiết
 
 ```{r}
+library(wdpar)     # tải dữ liệu khu bảo tồn
 library(tidyverse) # xử lý và trực quan hóa dữ liệu
 library(sf)        # xử lý dữ liệu không gian dạng vector
 library(stars)     # xử lý dữ liệu không gian dạng raster
+library(tmap)      # hiển thị dữ liệu không gian
+library(readxl)    # đọc dữ liệu Excel
+
+# webdriver::install_phantomjs() # có thể phải cài PhantomJS để chạy các lệnh của wdpar
 ```
 
 2.  Dữ liệu raster: mình dùng dữ liệu nhiệt độ bề mặt nước biển tháng 1
-    năm 2000 được tải trong bài viết [Tải dữ liệu khí hậu từ Copernicus
-    Climate Data
-    Store](https://bui-tuananh.github.io/posts/2024-09-08_get-Copernicus-Climate-Data-Store/)
+    năm 2000 được tải từ [Copernicus Climate Data
+    Store](https://cds-beta.climate.copernicus.eu/) (xem bài viết [Tải
+    dữ liệu khí hậu từ Copernicus Climate Data
+    Store](https://bui-tuananh.github.io/posts/2024-09-08_get-Copernicus-Climate-Data-Store/))
 3.  Dữ liệu vector: mình dùng dữ liệu khu bảo tồn của [The World
     Database on Protected
     Areas](https://www.protectedplanet.net/en/thematic-areas/wdpa?tab=WDPA)
-    tải từ
-    [UNEP-WCMC](https://data-gis.unep-wcmc.org/portal/home/item.html?id=1919c32890074ce5a589a1a99b48994b)
+    tải bằng thư viện *wdpar* (xem bài viết [Tải dữ liệu khu bảo tồn từ
+    The World Database on Protected
+    Areas](Tải%20dữ%20liệu%20khu%20bảo%20tồn%20từ%20The%20World%20Database%20on%20Protected%20Areas))
 
 ```{r}
-pa <- read_sf("./khu-bao-ton-quoc-gia.geojson")
+# Dữ liệu khu bảo tồn Việt Nam
+vietnam <- wdpa_fetch(
+  x = "Vietnam",       # Tên nước hoặc mã nước theo ISO3 (ví dụ VNM)
+  wait = TRUE,       
+  download_dir = "."   # Thư mục lưu file, "." nghĩa là sẽ lưu ở thư mục làm việc hiện tại  (working directory)
+)
+```
 
-ggplot() +
-  geom_sf(data = pa %>% filter(Ten %in% c("Côn Đảo"))) +
-  facet_wrap(~ Ten)
+```{r}
+# Trích xuất dữ liệu khu dự trữ sinh quyển Kiên Giang
+kiengiang <- vietnam %>% filter(NAME == "Kien Giang")
+
+tmap_mode(mode = "view") # thiết lập chế độ tương tác
+tm_shape(kiengiang) +
+  tm_borders()
 ```
 
 # Xử lý dữ liệu
 
-## Đọc dữ liệu 
+## Đọc dữ liệu
 
 ```{r}
 # Dữ liểu raster
-oras5 <- read_stars("./sosstsst_control_monthly_highres_2D_200001_CONS_v0.1.nc") #hoặc read_ncdf cho dữ liệu .nc
+# mình dùng read_ncdf() để đồng nhất với bài viết trước vì file raster ở dạng .nc
+oras5 <- read_ncdf("./sosstsst_control_monthly_highres_2D_200001_CONS_v0.1.nc") 
+
+# với các dạng file raster khác, ví dụ .tif, thì dùng read_stars() 
+# oras5 <- read_stars("./sosstsst_control_monthly_highres_2D_200001_CONS_v0.1.nc") 
 
 oras5
 ```
 
--   dữ liệu ORAS5 có 3 chiều (dimensions): kinh độ (x), vĩ độ (y), và thời gian (time_counter); và 1 thuộc tính (attribute): nhiệt độ bề mặt nước biển (sostsst)
+-   dữ liệu ORAS5 có 3 chiều (dimensions): kinh độ (x), vĩ độ (y), và
+    thời gian (time_counter); và 1 thuộc tính (attribute): nhiệt độ bề
+    mặt nước biển (sostsst)
 
--   vì dữ liệu ORAS5 có phạm vi toàn cầu nên để tiện hiển thị mình sẽ cắt quanh khu vực Việt Nam
+-   vì dữ liệu ORAS5 có phạm vi toàn cầu nên để tiện hiển thị mình sẽ
+    cắt quanh khu vực Việt Nam
 
 ```{r}
 # cắt dữ liệu gần khu vực Việt Nam
@@ -130,123 +155,154 @@ oras5_sub
 
 -   dữ liệu sau khi cắt có phạm vi kinh độ 97.5°-122.5° và vĩ độ
     0.26°-24.46°
-  
-## Đổi hệ quy chiếu 
+
+## Đổi hệ tọa độ
+
+Do dữ liệu oras5 ở dạng curvilinear grid (lưới cong) với hệ tọa độ
+OGC:CRS84, khác với định dạng grid (lưới phẳng) thông thường ở hệ tọa độ
+EPSG:4326 (WGS 84) nên cần đổi
+
+```{r}
+# có thể xem hệ tọa độ gốc của file bằng lệnh st_crs()
+# st_crs(oras5)
+
+oras5_sub <- st_warp(oras5_sub,        # file cần đổi hệ tọa độ
+                     crs = 4326,       # hệ tọa độ mới: 4326 là EPGS:4326
+                     cellsize = 0.25   # độ phân giải grid, dữ liệu ORAS5 có độ phân giải khoảng 0.25°
+                     )
+```
+
+```{r}
+tm_shape(oras5_sub) +
+  tm_raster()
+```
+
 ## Cắt dữ liệu theo bounding box
+
+Bounding box là một khu vực không gian hình chữ nhật được xác định bằng
+2 điểm: (1) với kinh độ và vĩ độ nhỏ nhất, và (2) với kinh độ và vĩ độ
+lớn nhất.
+
+```{r}
+# lấy tọa độ bounding box 
+bbox <- st_bbox(kiengiang)
+bbox
+```
+
+```{r}
+# cắt dữ liệu theo bounding box
+oras5_bbox <- oras5_sub[bbox]
+
+tm_shape(oras5_bbox) +
+  tm_raster() +
+  tm_shape(kiengiang) +
+  tm_borders()
+```
+
 ## Cắt dữ liệu theo polygon
 
-```{r}
-# Dữ liểu vector
-pa <- read_sf("./khu-bao-ton-quoc-gia.geojson")
-
-pa
-```
+Polygon ở đây là ranh giới của khu dự trữ sinh quyển Kiên Giang
 
 ```{r}
-dir <- "D:/OneDrive - UGent/data/Admin/WDPA_WDOECM_Sep2024_Public"
-wdpa <- read_sf(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb"))
-#nc = st_read(system.file(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb"), package="sf"))
-#layer <- st_layers(system.file(file.path(dir, "WDPA_WDOECM_Sep2024_Public.gdb", package = "sf"))$name[1]
-##wdpa
-#names(wdpa)
+# cắt dữ liệu theo polygon
+oras5_kiengiang <- oras5_sub[kiengiang]
 
-sort(unique(wdpa$PARENT_ISO3))
-vietnam <- wdpa %>% filter(PARENT_ISO3 == "VNM")
-
-ggplot() +
-  geom_sf(data = vietnam %>% filter(NAME %in% c("Con Dao National Park"))) 
+tm_shape(oras5_kiengiang) +
+  tm_raster() +
+  tm_shape(kiengiang) +
+  tm_borders()
 ```
-
 
 ## Trích xuất dữ liệu theo polygon
+
+```{r}
+# trích xuất dữ liệu 
+sst_mean <- aggregate(oras5_sub,    # dữ liệu raster
+                      kiengiang,    # dữ liệu vector
+                      FUN = mean,   # hàm tính toán, ví dụ mean (trung bình)
+                      na.rm = TRUE  # tính toán kể cả trong trường hợp có dữ liệu NA
+                      )
+
+# nhóm dữ liệu trích xuất với dữ liệu vector ban đầu theo tọa độ không gian
+# dữ liệu trích xuất và dữ liệu vector ở dạng không gian nên 
+# mình dùng as.data.frame() để chuyển từ dữ liệu dạng không gian (sf) sang dạng bảng (data frame) để việc nhóm được xử lý nhanh hơn  
+kiengiang_sst <- left_join(as.data.frame(sst_mean),  # dữ liệu trích xuất
+                           as.data.frame(kiengiang), # dữ liệu vector
+                           by = join_by(geometry)    # tọa độ không gian để nhóm
+                           ) 
+
+# việc nhóm này sẽ rất có ích khi bạn trích xuất dữ liệu từ vector có nhiều đối tượng
+# từ đó bạn có thể biết giá trị tính toán của từng đối tượng
+
+kiengiang_sst
+```
+
+-   Ở ví dụ trên mình tính giá trị nhiệt độ bề mặt nước biển trung bình
+    (mean) trong khu vực khu dự trữ sinh quyển Kiên Giang. Các hàm tính
+    toán cơ bản khác trong R bao gồm:
+
+    -   giá trị trung vị - median
+
+    -   giá trị nhỏ nhất - min
+
+    -   giá trị lớn nhất - max
+
+    -   độ lệch chuẩn (standard deviation) - sd
+
+    -   phương sai (variance) - var
+
 ## Trích xuất dữ liệu theo điểm
+
+Giả sử chúng ta có 8 điểm lấy mẫu ở file Excel và chúng ta muốn trích
+xuất giá trị nhiệt độ bề mặt nước biển tại 8 điểm đó
+
+```{r}
+# đọc file Excel
+sample <- readxl::read_excel("./sample.xlsx")
+
+# đổi dữ liệu dạng bảng sang sạng không gian (sf feature)
+sample_sf <- st_as_sf(sample, coords = c("lon", "lat"), crs = 4326)
+
+# hiển thị dữ liệu
+tm_shape(oras5_kiengiang) +
+  tm_raster() +
+  tm_shape(kiengiang) +
+  tm_borders() +
+  tm_shape(sample_sf) +
+  tm_dots()
+```
+
+```{r}
+# trích xuất dữ liệu 
+sst_point <- st_extract(oras5_kiengiang, sample_sf)
+
+# nhóm dữ liệu trích xuất với dữ liệu vector ban đầu theo tọa độ không gian
+# mình dùng as.data.frame() để chuyển từ dữ liệu dạng không gian (sf) sang dạng bảng (data frame) để việc nhóm được xử lý nhanh hơn  
+sample_sst <- left_join(as.data.frame(sst_point),  # dữ liệu trích xuất
+                        as.data.frame(sample_sf),  # dữ liệu vector
+                        by = join_by(geometry)     # tọa độ không gian để nhóm
+                        ) 
+
+# dữ liệu sau khi nhóm ở trên là ở dạng bảng với cột tọa độ 'geometry'
+# có thể chuyển lại dữ liệu dạng bảng này thành dạng không giang với lệnh st_as_sf
+sample_sst <- st_as_sf(sample_sst, sf_column_name = "geometry")         
+
+# hiển thị dữ liệu sau khi trích xuất
+ggplot(data = sample_sst, aes(x = id, y = as.numeric(sosstsst))) +
+  geom_point() +
+  labs(x = "sample id",
+       y = "sst")
+```
+
 ## Lưu dữ liệu
 
-
-
 ```{r}
-# cắt dữ liệu gần khu vực Việt Nam
-oras5_sub <- oras5[, 100:200, 500:600, ]
-# 100:200 là thứ tự chiều kinh độ x
-# 500:600 là thứ tự chiều vĩ độ y
+# lưu dữ liệu raster khu dự trữ sinh quyển Kiên Giang
+write_mdim(oras5_kiengiang, 
+           filename = "./oras5_kiengiang_sst_01.2000.nc")
 
-oras5_sub 
-```
-
--   dữ liệu sau khi cắt có phạm vi kinh độ 97.5°-122.5° và vĩ độ
-    0.26°-24.46°
-
-```{r}
-ggplot() +
-  geom_stars(data = oras5_sub) +
-  scale_fill_distiller(palette = "RdYlBu")
-```
-
-# Tải dữ liệu ERA5
-
-1.  Lấy API tải dữ liệu và chuyển đổi API tải dữ liệu từ python sang R
-    (tương tự như bước 1-2 ở phần Tải dữ liệu ORAS5). Các lựa chọn thuộc
-    tính của dữ liệu ở ERA5 bao gồm: kiểu dữ liệu (product type, theo
-    tháng hay theo giờ), biến (variable), năm (year), tháng (month),
-    thời gian (nếu dữ liệu theo giờ), phạm vi địa lý, định dạng dữ liệu.
-    Để ví dụ thì mình chọn như sau:
-
-    -   kiểu dữ liệu: theo tháng
-
-    -   biến: tổng lượng mưa (Total precipitation)
-
-    -   năm: 2000
-
-    -   tháng: 1-12
-
-    -   thời gian: không áp dụng
-
-    -   phạm vi địa lý: kinh độ 97.5°-122.5° và vĩ độ 0.26°-24.46°
-        (quanh khu vực Việt Nam tương tự như ở dữ liệu ORAS5)
-
-    -   định dạng dữ liệu: NetCDF4 (file .nc giống như ở dữ liệu ORAS5)
-
-2.  Nhập API và tải dữ liệu
-
-```{r}
-request <- list(
-  dataset_short_name = "reanalysis-era5-land-monthly-means",
-  product_type = "monthly_averaged_reanalysis",
-  variable = "total_precipitation",
-  year = "2000",
-  month = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"),
-  time = "00:00",
-  data_format = "netcdf",
-  download_format = "zip",
-  area = c(24.46, 97.5, 0.26, 122.5),
-  target = "era5.zip"
-)
-```
-
-```{r, eval=F, echo=T}
-file <- wf_request(
- request  = request,  # API
- transfer = TRUE,     # TRUE để tải file 
- path     = "."       # Thư mục lưu file
- )
-```
-
-3.  Đọc file (đã được giải nén)
-
-```{r}
-era5 <- read_ncdf("./data_0.nc")
-
-era5
-```
-
--   dữ liệu ERA5 có 3 chiều (dimensions): kinh độ (longitude), vĩ độ
-    (latitude), và thời gian (valid_time); và 1 thuộc tính (attribute):
-    tổng lượng mưa (tp). Có 12 giá trị thời gian tương ứng với 12 tháng
-    của năm 2000.
-
-```{r}
-ggplot() +
-  geom_stars(data = era5) +
-  scale_fill_distiller(palette = "GnBu", na.value = "white") +
-  facet_wrap(~ valid_time)
+# đọc và hiển thị dữ liệu để kiểm tra xem việc lưu có thành công hay không
+oras5_kiengiang <- read_ncdf("./oras5_kiengiang_sst_01.2000.nc")
+tm_shape(oras5_kiengiang) +
+  tm_raster()
 ```

@@ -50,8 +50,10 @@ library(kableExtra)
 #library(glmmTMB)
 library(reactable)
 library(patchwork)
+library(wdpar)     # tải dữ liệu khu bảo tồn
+library(tmap)      # hiển thị dữ liệu không gian
 
-
+tmap_mode(mode = "view")
 
 kable_df <- function(..., digits=2) {
   kable(..., digits=digits) %>% 
@@ -72,7 +74,7 @@ for Conservation of Nature (IUCN) và được quản lý bởi UN Environment
 Programme World Conservation Monitoring Centre (UNEP-WCMC). Dữ liệu WDPA
 được cập nhật hàng tháng và có thể được tải trực tiếp từ trang
 [web](https://www.protectedplanet.net/en/thematic-areas/wdpa?tab=WDPA)
-hoặc qua thư viện [*wdpar*](https://github.com/prioritizr/wdpar)trên R.
+hoặc qua thư viện [*wdpar*](https://github.com/prioritizr/wdpar) trên R.
 
 Nếu tải dữ liệu trực tiếp từ trang web thì dữ liệu sẽ có phạm vi toàn
 cầu với dung lượng rất lớn, còn nếu tải dữ liệu qua *wdpar* thì có thể
@@ -113,36 +115,8 @@ vietnam
 Hiển thị toàn bộ dữ liệu
 
 ```{r}
-ggplot() +
-  geom_sf(data = vietnam)
-```
-
-Hiển thị dữ liệu vườn quốc gia và khu bảo tồn biển Côn Đảo
-
-```{r}
-condao <- vietnam %>% filter(NAME == "Con Dao")
-
-ggplot() +
-  geom_sf(data = condao, aes(color = DESIG_ENG), fill = NA) 
-```
-
--   có thể thấy ranh giới vườn quốc gia và khu bảo tồn không trùng khớp
-    nhau; việc này có thể do vấn đề hệ tọa độ (ví dụ dữ liệu ở hệ tọa độ
-    VN-2000 thường lệch so với dữ liệu ở hệ tọa độ WGS-84 khoảng 200m).
-
-Hiển thị dữ liệu vườn quốc gia và khu bảo tồn biển Côn Đảo với bản đồ
-nền (ESRI, OpenStreetMap)
-
-```{r}
-# sử dụng thư viện tmap
 tmap_mode(mode = "view") # thiết lập chế độ tương tác
 
-tm_shape(condao %>% filter(DESIG_ENG == "National Park")) +
-  tm_borders(col = "red") +
-  tm_shape(condao %>% filter(DESIG_ENG == "Marine Protected Area")) +
-  tm_borders(col = "blue")
+tm_shape(vietnam) +
+  tm_polygons(id = "ORIG_NAME")
 ```
-
--   có thể thấy cả ranh giới vườn quốc gia và khu bảo tồn đều không
-    trùng khớp với theo bản đồ nền ở hệ tọa độ WGS-84; vì thế dữ liệu
-    cần được điều chỉnh đúng hệ tọa độ trước khi sử dụng thực tế.
