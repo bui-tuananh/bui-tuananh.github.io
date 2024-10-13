@@ -1,0 +1,491 @@
+---
+title: "Mô hình hỗn hợp (Mixed-effects model) 1"
+# description: |
+#   Mô hình hỗn hợp (Mixed-effects model) I
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-07-21'
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+#tags: [tag1, tag2] #for search
+categories:
+  - Phân tích dữ liệu
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+# library(broom)
+library(kableExtra)
+# library(visibly)
+library(glmmTMB)
+library(reactable)
+library(patchwork)
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+## Giới thiệu
+
+Trong sinh thái học, các dữ liệu thu thập từ thực địa thường không hoàn
+toàn độc lập (có yếu tố phụ thuộc). Ví dụ, nếu chúng ta thu thập dữ liệu
+của các cá thể ở các quần thể khác nhau thì số liệu sẽ có yếu tố phụ
+thuộc ở cấp quần thể, dữ liệu từ các cá thể từ cùng một quần thể sẽ có
+giá trị tương đồng nhau. Một ví dụ khác ở cấp cá thể là khi ta thu thập
+dữ liệu ở những mốc thời gian khác nhau từ cùng một cá thể thì những dữ
+liệu này sẽ có giá trị tương đồng nhau so với những dữ liệu từ một cá
+thể khác. Với những dữ liệu không độc lập (có yếu tố phụ thuộc) thì việc
+áp dụng mô hình hồi quy (regression models) sẽ vi phạm giả thuyết về
+tính độc lập của dữ liệu và dẫn đến sai lệch trong kết quả ước lượng. Để
+phân tích những dữ liệu không độc lập (có yếu tố phụ thuộc), mà chúng ta
+thường thấy trong sinh thái học, thì một trong những công cụ hiệu quả và
+được sử dụng phổ biến là mô hình hỗn độn (mixed-effects models).
+
+Trong bài viết này, mình sẽ giới thiệu về (1) mô hình hỗn hợp và (2)
+cách sử dụng một mô hình hỗn hợp tuyến tính (linear mixed-effects
+models) trong R. Mình sẽ sử dụng dữ liệu giả lập để đảm bảo mô hình mình
+sử dụng có đúng cấu trúc với dữ liệu.
+
+## Mô hình hỗn hợp
+
+Mô hình hỗn hợp gồm ba thành phần: **ảnh hưởng cố định** (fixed
+effects), **ảnh hưởng ngẫu nhiên** (random effects), và **sai số ngẫu
+nhiên** (random error)
+
+$$y = \alpha + \beta_1x_1 + \dots + \beta_nx_n + (a^a + \dots + a^z + b^ax_1 + \dots + b^zx_n + f(.)) + \varepsilon$$
+
+trong đó:
+
+-   **ảnh hưởng cố định** là $\alpha + \beta_1x_1 + \dots + \beta_nx_n$
+
+    -   $\alpha$ là hệ số chặn (intercept)
+
+    -   $\beta$ là hệ số hồi quy hoặc hệ số dốc (slope) của mỗi ảnh
+        hưởng cố định $x$ (từ 1 đến n)
+
+-   **ảnh hưởng ngẫu nhiên** là
+    $(a^a + \dots + a^z + b^ax_1 + \dots + b^zx_n + f(.))$
+
+    -   $a$ là hệ số chặn ngẫu nhiên (random intercept) của mỗi cấp phụ
+        thuộc (từ a đến z)
+
+    -   $b$ là hệ số hồi quy ngẫu nhiên (random slope) của mỗi cấp phụ
+        thuộc (từ a đến z)
+
+    -   $f(.)$ là các hiệu ứng ngẫu nhiên khác như không gian hoặc thời
+        gian
+
+    -   lưu ý 1: $a$ và $b$ được giả định là tuân theo phân bố chuẩn với
+        giá trị trung bình (mean) 0 và phương sai (variance)
+        $\sigma_a^2$ và $\sigma_b^2$ ($\sigma_a$ và $\sigma_b$ là độ
+        lệch chuẩn (standard deviation) của $a$ và $b$); còn được ký
+        hiệu là $a$ \~ $N(0,\sigma_a^2)$ và $b$ \~ $N(0,\sigma_b^2)$
+
+    -   lưu ý 2: ảnh hưởng ngẫu nhiên chỉ có thể là biến phân loại
+        (categorical variable), ví dụ như quần thể, khu vực, cá thể
+
+    -   lưu ý 3: ảnh hưởng ngẫu nhiên có thể chỉ bao gồm một trong số
+        các thành phần trên hoặc bao gồm tổ hợp của các thành phần khác
+        nhau tùy thuộc vào cấu trúc của dữ liệu
+
+-   **sai số ngẫu nhiên** là $\varepsilon$
+
+    -   $\varepsilon$ được giả định là tuân theo phân bố chuẩn với giá
+        trị trung bình 0 và phương sai $\sigma_{\varepsilon}^2$;
+        $\varepsilon$ \~ $N(0,\sigma_b^2)$
+
+Ảnh hưởng cố định mô tả mối liên hệ giữa biến phụ thuộc $y$ (response
+variable) và (các) biến giải thích (explanatory variables) $x$. Ví dụ,
+giả sử chiều dài cơ thể cá (biến phụ thuộc $y$, đơn vị cm) có liên hệ
+với nhiệt độ môi trường (biến giải thích $x$, đơn vị $^\circ$C ) theo
+công thức $y$ = 100 - 5$x$ ($\alpha$ = 100, $\beta$ = -5), nghĩa là ở
+nhiệt độ 0 $^\circ$C ($x$ = 0) chiều dài trung bình của cá là 100 cm và
+mỗi khi nhiệt độ tăng một 1 $^\circ$C thì chiều dài trung bình của cá
+giảm 5 cm. Phần ảnh hưởng cố định cũng thể hiện giá trị ước lượng
+
+Ảnh hưởng ngẫu nhiên mô tả cấu trúc phụ thuộc của mô hình. Ví dụ, giả sử
+chúng ta thu thập dữ liệu chiều dài cơ thể cá từ 5 quần thể khác nhau
+(chỉ có một cấp phụ thuộc là quần thể) với $a$ của 5 quần thể là (-3,3,
+13,6, -4,7, -8,4, -14,6). Mỗi quần thể có một công thức mối liên hệ giữa
+giữa chiều dài cơ thể cá và nhiệt độ môi trường như sau:
+
+-   Quần thể 1: $y = 100 - 5x + (-3.3)$
+
+-   Quần thể 2: $y = 100 - 5x + (13.6)$
+
+-   Quần thể 3: $y = 100 - 5x + (-4.1)$
+
+-   Quần thể 4: $y = 100 - 5x + (-8.4)$
+
+-   Quần thể 5: $y = 100 - 5x + (-14.6)$
+
+nghĩa là chiều dài trung bình của cá ở các quần thể từ 1 đến 5 lần lượt
+cao hơn hoặc thấp hơn -3,3, 13,6, -4,7, -8,4, -14,6 cm so với chiều dài
+trung bình của cá ước lượng cho tất cả các quan sát trong bộ dữ liệu
+(phần ảnh hưởng cố định).
+
+Sai số ngẫu nhiên mô tả sự khác biệt giữa giá trị quan sát (chiều dài
+của từng cá thể cá) và giá trị ước lượng (chiều dài trung bình cá ước
+lượng cho từng quần thể theo công thức $y$ = 100 - 5$x$ + $a$ với $a$
+của 5 quần thể là (-3,3, 13,6, -4,7, -8,4, -14,6).
+
+Để dễ hình dung, chúng ta có thể xem Hình \@ref(fig:fig1). Trong đó:
+
+-   đường đậm màu đen thể hiện mối liên hệ giữa chiều dài cơ thể cá và
+    nhiệt độ ước lượng cho tất cả cá quan sất trong bộ dữ liệu (phần
+    **ảnh hưởng cố định** $y$ = 100 - 5$x$)
+
+-   đường nét đứt kéo dài từ đường đậm màu đen thể hiện hệ số chặn
+    $\alpha$ = 100 khi $x$ = 0
+
+-   các đường có màu thể hiện mối liên hệ giữa chiều dài cơ thể cá và
+    nhiệt độ ước lượng cho từng quần thể ($y$ = 100 - 5$x$ + $a$ với $a$
+    là phần **ảnh hưởng ngẫu nhiên** của 5 quần thể với giá trị (-3,3,
+    13,6, -4,7, -8,4, -14,6)).
+
+-   các điểm có màu thể hiện giá trị chiều dài cơ thể cá và nhiệt độ
+    quan sát được
+
+-   các đường nét chấm thể hiện sự khác biệt giữa giá trị quan sát và
+    giá trị ước lượng (phần **sai số ngẫu nhiên**)
+
+```{r fig1, echo=FALSE, fig.cap="Biểu đồ mô tả các thành phần của mô hình hỗn hợp"}
+set.seed(100) #2
+n_pop = 5
+df_sim <- tibble(pop = rep(factor(seq(1,n_pop)), each = 100),
+             pop_name = paste("Quần thể", pop),
+             temp = rep(rnorm(100, mean = c(3), sd = 1), n_pop),
+             length_fixed = 100 - 5*temp,
+             random_int = rep(rnorm(n_pop, mean = 0, sd = 10), each = 100),
+             length_pop = 100 - 5*temp + random_int, 
+             random_error = rnorm(n_pop*100, mean = 0, sd = 1),
+             length = 100 - 5*temp + random_int + random_error,
+             )
+
+df <- df_sim %>% 
+  select(pop_name, temp, length)
+
+lme <- glmmTMB(length ~ temp + (1 | pop_name), data = df_sim)                
+
+df_sim <- df_sim %>% 
+  mutate(length_fixed_pred = fixef(lme)$cond["(Intercept)"] + fixef(lme)$cond["temp"]*temp,
+         length_pop_pred = predict(lme),
+         length_res = length - length_pop_pred)
+
+df_int <- tibble(temp = c(0,1),
+                 length_fixed_pred = fixef(lme)$cond["(Intercept)"] + fixef(lme)$cond["temp"]*temp)
+
+ggplot() +
+  # error
+  geom_linerange(data = df_sim, 
+                 aes(x = temp, 
+                     y = length, 
+                     ymin = length, 
+                     ymax = length_pop_pred), 
+                 linetype = "dotted",
+                 alpha = 1) +
+  # obs
+  geom_point(data = df_sim, aes(x = temp, y = length, color = pop_name)) +
+  # fixed effect
+  geom_line(data = df_sim, aes(x = temp, y = length_fixed_pred)) +
+  geom_line(data = df_int, aes(x = temp, y = length_fixed_pred), linetype = "dashed") +
+  # random effect
+  geom_line(data = df_sim, aes(x = temp, y = length_pop_pred, color = pop_name)) +
+  labs(x = "Nhiệt độ (\u00b0C)",
+       y = "Chiều dài cơ thể cá (cm)",
+       color = NULL)
+```
+
+## Mô hình hỗn hợp tuyến tính trong R
+
+Ở phần này mình sẽ giới thiệu cách sử dụng một mô hình hỗn hợp tuyến
+tính (linear mixed-effects models) trong R. Mình sẽ sử dụng dữ liệu giả
+lập để đảm bảo mô hình mình sử dụng có đúng cấu trúc với dữ liệu (phần
+code để giả lập dữ liệu ở phía cuối của mục này).
+
+Trước khi bắt đầu, chúng ta sẽ tải các thư viện để giúp cho việc code dễ
+dàng hơn
+
+```{r}
+# Thiết lập ban đầu
+library(tidyverse) # bộ thư viện để xử lý, trực quan hóa dữ liệu
+library(glmmTMB)   # thư viện để chạy mô hình hỗn hợp
+library(reactable) # thư viện để hỗ trợ hiển thị bảng 
+library(patchwork) # thư viện để hỗ trợ việc hiển thị biểu đồ 
+
+theme_set(theme_bw()) # đặt nền của biểu đồ theo kiểu theme_bw()
+
+# hàm kable_df để trình bày bảng
+kable_df <- function(..., digits=1) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+```
+
+### Khám phá dữ liệu
+
+Giả sử chúng ta thu thập dữ liệu chiều dài cơ thể cá ở 5 quần thể khác
+nhau. Ở mỗi quần thể, chúng ta thu thập dữ liệu của 100 cá thể cá. Do
+chúng ta muốn nghiên cứu mối quan hệ giữa nhiệt độ và chiều dài cơ thể
+cá nên với mỗi quan sát, chúng ta cũng đo nhiệt độ môi trường tại thời
+điểm thu thập dữ liệu. Dữ liệu thu thập như ở bảng sau:
+
+```{r}
+# df là dữ liệu giả lập đã được tạo trước
+# pop_name (quần thể), temp (nhiệt độ), và length (chiều dài cơ thể cá)
+# các giá trị được làm tròn đến 1 đơn vị thập phân 
+
+reactable(df %>%
+    mutate(temp = round(temp, 1),
+           length = round(length, 1)))
+```
+
+Ta sẽ kiểm tra phân bố của chiều dài cơ thể cá (biến phụ thuộc $y$) và
+mối liên hệ của chiều dài cơ thể cá và nhiệt độ (biến giải thích $x$).
+
+```{r fig2, fig.cap="Phân bố của chiều dài cơ thể cá (A) và mối liên hệ giữa chiều dài cơ thể cá và nhiệt độ (B)"}
+# phân bố chiều dài cơ thể cá
+p1 <- ggplot(data = df, aes(x = length)) +
+  geom_histogram(bins = 30)
+
+# chiều dài cơ thể cá ~ nhiệt độ
+p2 <- ggplot(data = df, aes(x = temp, y = length, color = pop_name)) +
+  geom_point() +
+  labs(x = "Nhiệt độ (\u00b0C)",
+       y = "Chiều dài cơ thể cá (cm)",
+       color = NULL)
+
+# gộp hai biểu đồ 
+(p1 | p2) +
+  plot_annotation(tag_levels = "A")
+```
+
+Về phân bố (Hình \@ref(fig:fig2)A), chúng ta có thể giả định chiều dài
+của cá tuân theo phân bố chuẩn. Về mối liên hệ giữa chiều dài cơ thể cá
+và nhiệt độ (Hình \@ref(fig:fig2)B), chúng ta có thể thấy hai điều: (1)
+chiều dài cơ thể cá có mối mối liên hệ nghịch với nhiệt độ với chiều dài
+cơ thể cá giảm khi nhiệt độ tăng; (2) ở cùng một nhiệt độ nhất định thì
+chiều dài cơ thể cá khác nhau giữa các quần thể.
+
+Nếu bạn thấy hình \@ref(fig:fig2)B quen thì chính xác vì là cùng dữ liệu
+sử dụng ở hình \@ref(fig:fig2). Nếu bạn quay lại mục trước thì bạn sẽ
+biết được kết quả của mối liên hệ giữa chiều dài cơ thể cá và nhiệt độ
+cũng như sự khác biệt giữa 5 quần thể. Tuy nhiên, tạm thời chúng ta sẽ
+coi như chưa biết gì và cùng thử phân tích dữ liệu này.
+
+### Phân tích dữ liệu
+
+Sau khi khám phá dữ liệu thì chúng ta có thể quyết định sử dụng một mô
+hình hỗn hợp như sau:
+
+$$y = \alpha + \beta x + a + \varepsilon$$
+
+trong đó $\alpha$ là hệ số chặn thể hiện chiều dài cá trung bình khi
+nhiệt độ ($x$) bằng 0 $^\circ$C; $\beta$ là hệ số hồi quy thể hiện mối
+quan hệ giữa chiều dài cá và nhiệt độ; $a$ là hệ số chặn ngẫu nhiên thể
+hiện sự khác biệt về chiều dài cá trung bình giữa 5 quần thể với
+$\alpha$ (mỗi một quần thể sẽ có một giá trị $a$), $a$ \~
+$N(0,\sigma_a^2)$ ; $\varepsilon$ là sai số ngẫu nhiên, $\varepsilon$ \~
+$N(0,\sigma_{\varepsilon}^2)$.
+
+```{r}
+# công thức mô hình hỗn hợp với thư viện glmmTMB
+
+lme <- glmmTMB(length ~ 1 + temp + (1 | pop_name), data = df)
+```
+
+Kết quả ước lượng của mô hình như sau:
+
+```{r}
+summary(lme)
+```
+
+Phần chúng ta cần quan tâm là (theo thứ tự từ dưới liên trên của kết quả
+summary()) là **Conditional model** (ảnh hưởng cố định) và **Random
+effects** (ảnh hưởng ngẫu nhiên).
+
+Đối với ảnh hưởng cố định trong phần **Conditional model**:
+
+-   dòng (Intercept) thể hiện hệ số chặn $\alpha$ là 99.9
+
+-   dòng temp thể hiện hệ số hồi quy $\beta$ là -5.0
+
+Đối với ảnh hưởng ngẫu nhiên trong phần **Random effects**:
+
+-   dòng pop_name (Intercept) thể hiện phương sai $\sigma_a^2$
+    (variance) và độ lệch chuẩn $\sigma_a$ (standard deviation) của hệ
+    số chặn ngẫu nhiên $a$
+
+-   dòng Residual thể hiện phương sai $\sigma_{\varepsilon}^2$
+    (variance) và độ lệch chuẩn $\sigma_{\varepsilon}$ (standard
+    deviation) của sai số ngẫu nhiên $\varepsilon$
+
+Phần kết quả ảnh hưởng cố định thì đã rõ ràng nhưng phần kết quả ảnh
+hưởng ngẫu nhiên từ summary() chưa cho chúng ta biết giá trị $a$ của
+từng quần thể là bao nhiêu. Chúng ta có thể lấy kết quả của $a$ như sau:
+
+```{r}
+# lấy kết quả cho hệ số chặn ngẫu nhiên (1 | pop_name) và làm tròn kết quả đến 2 đơn vị 
+ranef(lme)$cond$pop_name %>%
+  rename("$a$" = `(Intercept)`) %>%
+  kable_df()
+```
+
+Tổng hợp các kết quả từ mô hình hỗn hợp như sau:
+
+-   hệ số chặn $\alpha$ là 99.9, nghĩa là ở nhiệt độ 0 $^\circ$C chiều
+    dài cá trung bình là 99,9 cm
+
+-   hệ số hồi quy $\beta$ là -5.0, nghĩa là khi nhiệt độ tăng 1
+    $^\circ$C thì chiều dài cá giảm -5,0 cm
+
+-   hệ số chặn ngẫu nhiên $a$ của 5 quần thể 1-5 là -3,2, 13,7, -4,6,
+    8,4, -14,3, nghĩa là chiều dài trung bình của cá ở các quần thể từ 1
+    đến 5 lần lượt cao hơn hoặc thấp hơn -3,2, 13,7, -4,6, 8,4, -14,3 cm
+    so với chiều dài trung bình của cá ước lượng cho tất cả các quan sát
+    trong bộ dữ liệu; $a$ phân bố với phương sai $\sigma_a^2$ = 50,9 (độ
+    lệch chuẩn $\sigma_a$ = 7,1)
+
+-   sai số ngẫu nhiên $\varepsilon$ phân bố với phương sai
+    $\sigma_{\varepsilon}^2$ = 1,0 (độ lệch chuẩn $\sigma_{\varepsilon}$
+    = 1,0)
+
+Để dễ hình dung thì ta sẽ trực quan hóa kết quả phân tích. Chúng ta cũng
+so sánh kết quả này với giá trị của các tham số được sử dụng khi giả lập
+dữ liệu để xem các kết quả có chính xác không.
+
+Hình \@ref(fig:fig3) thể hiện kết quả phân tích (đường liền mờ) và giá
+trị giả lập (đường nét đứt). Đường màu đen thể hiện mối liên hệ giữ
+chiều dài cơ thể cá và nhiệt độ cho toàn bộ quan sát. Các đường có màu
+thể hiện mối liên hệ cho từng quần thể. Các điểm có màu là giá trị chiều
+dài cơ thể cá và nhiệt độ quan sát được.
+
+```{r fig3, fig.cap="Trực quan hóa các kết quả phân tích mối liên hệ giữa chiều dài cơ thể cá và nhiệt độ" }
+df_pred <- df %>%
+  mutate(length_fixed_pred = fixef(lme)$cond["(Intercept)"] + fixef(lme)$cond["temp"]*temp,
+         length_pop_pred = predict(lme),
+         length_res = length - length_pop_pred) #có thể dùng lenght_res = resid(lme)
+
+ggplot() +
+  # obs
+  geom_point(data = df_pred, aes(x = temp, y = length, color = pop_name)) +
+  # fixed effect
+  geom_line(data = df_pred, aes(x = temp, y = length_fixed_pred), alpha = 0.3) +
+  geom_line(data = df_sim, aes(x = temp, y = length_fixed_pred), linetype = "dashed") +
+  # random effect
+  geom_line(data = df_pred, aes(x = temp, y = length_pop_pred, color = pop_name), alpha = 0.3) +
+  geom_line(data = df_sim, aes(x = temp, y = length_pop_pred, color = pop_name), linetype = "dashed") +
+  labs(x = "Nhiệt độ (\u00b0C)",
+       y = "Chiều dài cơ thể cá (cm)",
+       color = NULL)
+```
+
+Kết quả phân tích trùng với giá trị giả lập do các đường liền mờ và các
+đường nét đứt gần như trùng khớp hoàn toàn. Ta có thể thấy sự trùng khớp
+này rõ hơn khi so sánh các tham số ước lượng và giả lập.
+
+```{r}
+lme_sum <- summary(lme)
+  
+tibble(`Tham số` = c("$\\alpha$", "$\\beta$", "$\\sigma_a$", "$\\sigma_{\\varepsilon}$"),
+       `Giá trị uớc lượng` = c(fixef(lme)$cond, sqrt(lme_sum$varcor$cond$pop_name[1]), lme_sum$sigma),
+       `Giá trị giả lập` = c(100, 5, 10, 1)) %>%
+  kable_df()
+```
+
+```{r}
+ranef(lme)$cond$pop_name %>% 
+  rename(`$a$ ước lượng` = `(Intercept)`) %>%
+  mutate(`$a$ giả lập` = unique(df_sim$random_int)) %>%
+  kable_df()
+```
+
+## Kết luận
+
+Trong bài viết này mình đã thiệu về mô hình hỗn hợp và cách sử dụng một
+mô hình hỗn hợp tuyến tính (linear mixed-effects models) trong R. Vì mục
+tiêu của bài viết là giới thiệu về khái niệm mô hình hỗn hợp nên mình
+dùng một ví dụ đơn giản với một hệ số chặn ngẫu nhiên $a$. Ở các bài
+viết sau mình sẽ giới thiệu các mô hình với cấu trúc phức tạp hơn (bao
+gồm hệ số hồi quy ngẫu nhiên, ảnh hưởng không gian, và thời gian) để thể
+hiện rõ hơn sự hiệu quả của mô hình hỗn hợp trong phân tích dữ liệu có
+các yếu tố phụ thuộc phức tạp (ví dụ các quan sát từ cùng một quần thể,
+cá thể, năm, hoặc khu vực) mà chúng ta thường gặp trong nghiên cứu sinh
+thái học.
+
+Để kết bài, mình sẽ đề cập đến một câu hỏi mà bất kỳ ai khi tiếp cận mô
+hình hỗn hợp đều sẽ có đó là: "khi nào thì quyết định một biến phân loại
+(ví dụ như giới tính, quần thể, cá thể, khu vực) là ảnh hưởng cố định
+hay ảnh hưởng ngẫu nhiên". Một quy tắc được nhắc đến nhiều trong các tài
+liệu nghiên cứu là một biến phân loại nên được sử dụng là ảnh hưởng ngẫu
+nhiên nếu có ít nhất 5 nhóm (ví dụ 5 quần thể trong biến quần thể), còn
+không nên được sử dụng là ảnh hưởng cố định (ví dụ biến giới tính với 2
+nhóm nam/nữ) [@gomes2022should].
+
+## Phụ lục
+
+### Code giả lập dữ liệu
+
+```{r warning=TRUE}
+# thiết lập giá trị để các hàm ngẫu nhiên (rnorm) luôn trả kết quả giống nhau
+# đảm bảo tính lặp lại của đoạn code
+set.seed(100) 
+
+n_pop = 5 #số quần thể
+df_sim <- tibble(pop = rep(factor(seq(1,n_pop)), each = 100),
+             pop_name = paste("Quần thể", pop),
+             temp = rep(rnorm(100, mean = c(3), sd = 1), n_pop),
+             length_fixed = 100 - 5*temp,
+             random_int = rep(rnorm(n_pop, mean = 0, sd = 10), each = 100),
+             length_pop = 100 - 5*temp + random_int, 
+             random_error = rnorm(n_pop*100, mean = 0, sd = 1),
+             length = 100 - 5*temp + random_int + random_error,
+             )
+
+df <- df_sim %>% 
+  select(pop_name, temp, length)
+```
+
+### Thuật ngữ sử dụng trong bài
+
+| Tiếng Việt                  | Tiếng Anh                     |
+|-----------------------------|-------------------------------|
+| Dữ liệu độc lập             | Independent data              |
+| Dữ liệu có yếu tố phụ thuộc | Dependent data                |
+| Mô hình hồi quy             | Regression model(s)           |
+| Mô hình hỗn hợp             | Mixed-effects model(s)        |
+| Mô hình hỗn hợp tuyến tính  | Linear mixed-effects model(s) |
+| Cấu trúc mô hình            | Model structure               |
+| Cấu trúc dữ liệu            | Data structure                |
