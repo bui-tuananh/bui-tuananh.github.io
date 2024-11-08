@@ -1,0 +1,82 @@
+---
+title: "Góc tài liệu | Sách về trực quan hóa dữ liệu"
+#description: |
+#  Description
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-08-22'
+citation: false  
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+#tags: [R 101] #for search
+categories:
+  - Góc tài liệu
+  - Trực quan hóa dữ liệu
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(ecmwfr)    # tải dữ liệu cds
+library(tidyverse) # xử lý và trực quan hóa dữ liệu
+library(sf)        # xử lý dữ liệu không gian dạng vector
+library(stars)     # xử lý dữ liệu không gian dạng raster
+# library(broom)
+library(kableExtra)
+# library(visibly)
+#library(glmmTMB)
+library(reactable)
+library(patchwork)
+library(tmap)      # hiển thị dữ liệu không gian
+library(readxl)    # đọc dữ liệu Excel
+
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+theme_set(theme_bw())
+```
+
+Một trong những sách về trực quan hóa dữ liệu mà mình rất thích là quyển
+[Data Visualization: A practical
+introduction](https://socviz.co/index.html#preface) của Kieran Healy.
+Sách có thể đọc online miễn phí. Sách bao gồm hai phần chính: (1) các
+nguyên tắc cơ bản cho việc trực quan hóa dữ liệu hiệu quả (chương 1) và
+(2) thực hành trực quan hóa dữ liệu với ggplot trong R (các chương tiếp
+theo). Mình đặc biệt thích sách này vì cách tiếp cận rất trực quan, đặc
+biệt ở chương 1, và phần thực hành với ggplot được phát triển từ đơn
+giản đến phực tạp với những ví dụ cụ thể về việc với một loại dữ liệu cụ
+thể thì loại biểu đồ nào sẽ phù hợp hoặc không phù hợp. Sách phù hợp với
+những ai bắt đầu học trực quan hóa dữ liệu với ggplot trong R hoặc muốn
+tìm hiểu thêm về trực quan hóa dữ liệu hiệu quả (ví dụ, chương 1).
+
+```{r fig1, fig.cap="Ví dụ về nguyên tắc trực quan hóa hiệu quả (hai hình bên trái) và không hiệu quả (ba hình bên phải) từ sách Data Visualization: A practical introduction (Hình 1.18)", echo = FALSE, out.width="100%"}
+knitr::include_graphics("images/2024-11-09_book-on-visualisation.png")
+```
