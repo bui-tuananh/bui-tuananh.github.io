@@ -115,5 +115,5 @@ chấm tròn xanh khi dùng hình thức "Màu sắc" (hai hình bên trái), nh
 sẽ khó để thấy hơn khi dùng hình thức "Hình dạng" (hai hình bên phải).
 
 ```{r fig4, fig.cap='Minh họa sự khác biệt giữa việc sử dụng hình thức "Màu sắc" (Color hue) và "Hình dạng" cho dữ liệu phân loại (Trích Hình 1.18 sách Data Visualization: A practical introduction)', echo = FALSE, out.width="100%"}
-knitr::include_graphics("images/img3.png")
+knitr::include_graphics("images/img3.PNG")
 ```
