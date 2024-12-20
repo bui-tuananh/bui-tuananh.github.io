@@ -65,8 +65,8 @@ theme_set(theme_bw())
 
 **Warming stripes** được tạo ra bởi [Ed Hawkins năm
 2018](https://x.com/ed_hawkins/status/999242147135188993) để trực quan
-hóa sự ấm lên của toàn cầu do biến đổi khí hậu (Hình \@ref(fig:fig1)), .
-Ý tưởng của warming stripes cũng được áp dụng để trực quan hóa [suy giảm
+hóa sự ấm lên của toàn cầu do biến đổi khí hậu (Hình \@ref(fig:fig1)). Ý
+tưởng của warming stripes cũng được áp dụng để trực quan hóa [suy giảm
 đa dạng sinh học](https://biodiversitystripes.info/global).
 
 ```{r fig1, fig.cap="Ed Hawkins giới thiệu về warming stripes năm 2018", echo = FALSE, out.width="100%"}
