@@ -83,10 +83,11 @@ Central and Southern North Sea (ICES division 4bc). Mình dùng dữ liệu
 # Tải và xử lý dữ liệu
 
 Dữ liệu mình sử dụng đã được cắt theo một số khu vực ở vùng biển Châu Âu
-từ dữ liệu gốc toàn cầu của HadISST. Tuy nhiên, để sử dụng cho bài viết
-này thì mình vẫn cần lọc lấy dữ liệu Central and Southern North Sea,
-tính giá trị nhiệt độ trung bình cho cả khu vực theo năm, và tính biến
-động nhiệt độ.
+từ dữ liệu gốc toàn cầu của HadISST. Dữ liệu có thể tải ở
+[đây](https://github.com/bui-tuananh/bui-tuananh.github.io/blob/main/_posts/2024-12-20_warming-stripe/data/hadisst_ices.rds).
+Tuy nhiên, để sử dụng cho bài viết này thì mình vẫn cần lọc lấy dữ liệu
+Central and Southern North Sea, tính giá trị nhiệt độ trung bình cho cả
+khu vực theo năm, và tính biến động nhiệt độ.
 
 ```{r}
 # Thiết lập ban đầu
