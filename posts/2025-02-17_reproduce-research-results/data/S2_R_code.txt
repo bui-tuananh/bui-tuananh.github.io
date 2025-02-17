@@ -1,0 +1,248 @@
+####Packages used: 
+library(lme4)
+library(AICcmodavg)
+library(effects)
+library(lattice)
+library(plyr)
+
+#######data reading and preparation##########
+Data<-read.csv('within zone example data.csv')###Supplement S2
+head(Data)
+str(Data)
+
+###plot of individual growth trajectories
+xyplot(Increment ~ Age, group=FishID, Data, type=c('l','p'))
+
+###centring function
+c. <- function (x) scale(x, scale = FALSE) 
+
+###covert Year and Cohort variables into factors
+Data$fYear <- factor(Data$Year)
+Data$fCohort <- factor(Data$Cohort)
+
+#######within zone models#####
+
+M1a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (1|FishID),Data)
+M1b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID),Data)
+
+#model comparison
+models<-list(M1a,M1b)
+Modnames <- c('M1a ', 'M1b ')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M2a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear), Data)
+M2b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fCohort), Data)
+
+###intraclass correlations
+vYear<-VarCorr(M2a)$fYear[1]
+vFishID<-VarCorr(M2a)$FishID[1] 
+vAge<-VarCorr(M2a)$FishID[4]
+covar<-VarCorr(M2a)$FishID[2]
+vErr<- (attr(VarCorr(M2a),'sc'))^2
+vYear / (vYear + vFishID + vAge + covar + vErr)
+
+M3a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID)+(c.(log(Age))|fYear), Data)
+M3b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data)
+M4a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear) + (1|fCohort), Data)
+M4b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fYear) + (1|fCohort), Data)
+M4c<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear) + (c.(log(Age))|fCohort), Data)
+M4d<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fYear) + (c.(log(Age))|fCohort), Data)
+
+#model comparison
+models<-list(M2a,M2b,M3a,M3b,M4a,M4b,M4c,M4d)
+Modnames <- c('M2a', 'M2b', 'M3a', 'M3b', 'M4a', 'M4b', 'M4c', 'M4d')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+######R square for mixed models
+
+rsquared.glmm=function(modlist) {
+  do.call(rbind,lapply(modlist,function(i) {
+    if(inherits(i,"merMod") | class(i)=="merLmerTest") {
+      VarF=var(as.vector(fixef(i) %*% t(i@pp$X))) 
+      VarRand=colSums(do.call(rbind,lapply(VarCorr(i),function(j) j[1])))
+      VarResid=attr(VarCorr(i),"sc")^2
+      Rm=VarF/(VarF+VarRand+VarResid)
+      Rc=(VarF+VarRand)/(VarF+VarRand+VarResid)
+      Rsquared.mat=data.frame(Class=class(i),Marginal=Rm,Conditional=Rc,
+      AIC=AIC(update(i,REML=F))) } 
+     else { print("Function requires models of class lm, lme, mer, or    merMod") 
+} } ) ) }
+
+rsquared.glmm(models)
+
+####random effects plots##########
+#extract Year effects
+(year.M2a<-ranef(M2a)$fYear[,1])
+(year.se.M2a<-sqrt (attr(ranef(M2a,postVar=TRUE) [["fYear"]],"postVar")[1,1,]))
+
+M2ayear<-data.frame(y=year.M2a)
+M2ayear$upper<-(M2ayear$y+year.se.M2a)
+M2ayear$lower<-(M2ayear$y-year.se.M2a)
+M2anew <- data.frame(year = (as.numeric(levels(Data$fYear)))) 
+M2adata<-cbind(M2anew,M2ayear)
+
+#extract Cohort effects
+(Cohort.M3b<-ranef(M3b)$fCohort[,1])
+(Cohort.se.M3b <-sqrt (attr(ranef(M3b,postVar=TRUE) [["fCohort"]],"postVar")[1,1,]))
+
+M3bCohort<-data.frame(y=Cohort.M3b)
+M3bCohort $SE<-( Cohort.se.M3b)##specify SEs
+M3bCohort $upper<-(M3bCohort$y+Cohort.se.M3b)
+M3bCohort $lower<-(M3bCohort$y-Cohort.se.M3b)
+M3bnew <- data.frame(Cohort = (as.numeric(levels(Data$fCohort)))) 
+M3bdata<-cbind(M3bnew,M3bCohort)
+
+#the plots
+par(mfrow=c(2,1))
+##plot year
+plot(range(M2anew$year), range(M2ayear), type = "n", ann = FALSE,axes=F,xlim=c(1970,2010))
+axis((1),las=1,tcl=-.2,cex.axis=1,xaxp=c(1970,2010,4),mgp=c(3,.4,0))
+axis((2),las=1,tcl=-.2,cex.axis=1,mgp=c(3,.4,0))
+box(bty='l')
+
+CI.U <- M2ayear[, "upper"]
+CI.L <- M2ayear[, "lower"] 
+X.Vec <- c(M2anew$year, tail(M2anew$year, 1), rev(M2anew$year), M2anew$year[1]) 
+Y.Vec <- c(CI.L, tail(CI.U, 1), rev(CI.U), CI.L[1]) 
+polygon(X.Vec, Y.Vec, col = "grey", border = NA) 
+matlines(M2anew$year,M2ayear, lty = c(1, 2, 2), type = "l", col = c("black", "", ""),lwd=1.5)
+points(M2adata$year,M2adata$y,pch=16,cex=.8)
+lines(c(1950,2010),c(0,0),lwd=1,lty=2)
+mtext('predicted growth (mm)',side=2,cex=1,line=2.5)
+mtext('Year',side=1,cex=1,line=2.5)
+mtext('Year random effect',side=3,cex=2,line=2)
+
+##plot cohort
+xy.error.bars<-function (xbar,ybar,x,y){
+plot(x, y, pch=16,cex=1,axes=FALSE,ylab='',xlab='',ylim=c(-.25,.25), xlim=c(1970,2010))
+arrows(x, y-yb, x, y+yb, code=3, angle=90, length=0,lwd=1)
+axis((1),las=1,tcl=-.2,mgp=c(3,.4,0))
+axis((2),las=2,tcl=-.2,mgp=c(3,.4,0))
+box(bty='l')
+}
+x<-M3bdata$Cohort
+y<- M3bdata$y
+xb<-c('')
+yb<- M3bdata$SE
+xy.error.bars(xb,yb,x,y)
+lines(c(1960,2010),c(0,0),lwd=1,lty=2)
+mtext('Cohort',side=1,line=2.5,cex=1)
+mtext('predicted growth (mm)',side=2,cex=1,line=2.5)
+mtext('Cohort random effect',side=3,cex=2,line=2)
+
+######Within zone models- intrinsic effect structures#######
+M3b1<- lmer (log(Increment) ~ c.(log(Age)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b2<- lmer (log(Increment) ~ c.(log(Age)) + sex + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b3<- lmer (log(Increment) ~ c.(log(Age)) + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b4<- lmer (log(Increment) ~ c.(log(Age)) * sex + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b5<- lmer (log(Increment) ~ c.(log(Age)) + sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b6<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+models<-list(M3b1,M3b2,M3b3,M3b4,M3b5,M3b6)
+Modnames <- c('M3b1','M3b2','M3b3','M3b4','M3b5','M3b6')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M3b1reml<- lmer (log(Increment) ~ c.(log(Age)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+
+ageplot<- as.data.frame (Effect (c('Age'), M3b1reml, xlevels = list (Age=seq(2,15,by=1))))
+ageplot$transfit<-exp(ageplot$fit)
+ageplot$transupper<-exp(ageplot$upper)
+ageplot$transCI<-ageplot$transupper-ageplot$transfit
+xy.error.bars<-function (xbar,ybar,x,y){
+plot(x, y, pch=16, cex=1, ljoin=2, axes=FALSE, ylab='', xlab='', xlim=c(2,15), ylim=c(0,.5))
+arrows(x, y-yb, x, y+yb, code=3, angle=90, length=0,lwd=1)
+axis((1),las=1, tcl=-.2, mgp=c(3,.4,0), xaxp=c(2,18,4), cex.axis=1)
+axis((2),las=2, tcl=-.2, mgp=c(3,.4,0), yaxp=c(0,.6,3), cex.axis=1)
+box(bty='l')}
+x<-ageplot$Age
+y<-ageplot$transfit
+xb<-c('')
+yb<-ageplot$transCI
+xy.error.bars(xb,yb,x,y)
+lines(x,y,lty=2)
+mtext('age',side=1,line=1.5,cex=1)
+mtext('predicted growth (mm)',side=2,line=2.5,cex=1)
+
+#####Within zone models- extrinisc effect structures############
+M3b7<- lmer (log(Increment) ~ c.(log(Age)) + c.(Temp) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+models<-list(M3b1,M3b7)
+Modnames <- c('M3b1','M3b7')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M3b7reml<- lmer (log(Increment) ~ c.(log(Age)) + c.(Temp) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+tempplot<- as.data.frame (Effect (c('Temp'), M3b7reml,xlevels= 10))
+tempplot$transfit<-exp(tempplot$fit)
+tempplot$transupper<-exp(tempplot$upper) 
+tempplot$translower<-exp(tempplot$lower) 
+
+##plot temperature effect with 95% CIs (on original scale)
+summary(tempplot)
+plot(transfit ~ Temp, tempplot, type='l',ylim=c(0.135,0.185))
+lines(transupper ~ Temp, tempplot, lty=2)
+lines(translower ~ Temp, tempplot, lty=2)
+
+M3b8<- lmer (log(Increment) ~ c.(log(Age)) + c.(Year) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+M3b9<- lmer (log(Increment) ~ c.(log(Age)) + c.(Year) + I(c.(Year)^2) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=F)
+models<-list(M3b1,M3b8, M3b9)
+Modnames <- c('M3b1','M3b8', 'M3b9')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M3b9reml<- lmer (log(Increment) ~ c.(log(Age)) + c.(Year) + I(c.(Year)^2) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+yearplot<- as.data.frame (Effect (c('Year'), M3b9reml,xlevels= 10))
+yearplot$transfit<-exp(yearplot$fit)
+yearplot$transupper<-exp(yearplot$upper) 
+yearplot$translower<-exp(yearplot$lower) 
+##plot Year effect with 95% CIs (on original scale)
+summary(yearplot)
+plot(transfit ~ Year, yearplot, type='l',ylim=c(0.1,0.29)) ##ylim ensures ##that the plot region is big enough to display CIs
+lines(transupper ~ Year, yearplot, lty=2)
+lines(translower ~ Year, yearplot, lty=2)
+
+################Within versus among individual variation##################
+Data$amongIDV<-ave(Data$Temp,Data$FishID)
+Data<-ddply(Data, .(FishID), transform, withinIDV = scale(Temp,scale=F))
+
+M8<- lmer (log(Increment) ~ c.(log(Age)) + c.(amongIDV) + c.(withinIDV)+ (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+M9<- lmer (log(Increment) ~ c.(log(Age)) + c.(amongIDV) + c.(withinIDV)+ (c.(log(Age))|FishID) + (c.(withinIDV) |FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+models<-list(M8,M9)
+Modnames <- c('M8','M9')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M8a<- lmer (log(Increment) ~ c.(log(Age)) + c.(Temp) + c.(amongIDV) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data, REML=T)
+
+##########across zone models###################
+Data2<-read.csv('among zone example data.csv')#Supplement S3
+head(Data2)
+str(Data2)
+Data2$fYear <- factor(Data2$Year)
+Data2$fCohort <- factor(Data2$Cohort)
+
+##load temperature dataset
+Temperature<-read.csv('example temperature.csv')#####Supplement S4
+Temperature$normal<- ave(Temperature$Temp,Temperature$zone)
+Temperature<- ddply(Temperature, .(zone), transform, anomaly = scale(Temp,scale=F))
+
+Data2<- merge(Data2, Temperature)
+
+M5a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(Age))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(Age))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5c<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (1|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5d<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (1|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5e<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(Age))|zone) + (1|zone:fCohort),Data2)
+M5f<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(Age))|zone) + (1|zone:fCohort), Data2)
+M5g<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (1|zone) + (1|zone:fCohort), Data2)
+M5h<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (1|zone) + (1|zone:fCohort), Data2)
+M5i<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(Age))+c.(log(AAC))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5j<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(Age)) + c.(log(AAC))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5k<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(AAC))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5l<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(Age)) + c.(log(AAC))|zone) + (1|zone:fCohort), Data2)
+M5m<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(AAC))|zone) + (c.(log(Age))|zone:fCohort), Data2)
+M5n<- lmer( log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(Age)) + c.(log(AAC))|zone) + (1|zone:fCohort), Data2)
+M5o<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (c.(log(Age))|zone:fYear) + (c.(log(AAC))|zone) + (1|zone:fCohort), Data2)
+M5p<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) +(c.(log(Age))|FishID) + (1|zone:fYear) + (c.(log(AAC))|zone) + (1|zone:fCohort), Data2)
+models<-list(M5a, M5b, M5c, M5d, M5e, M5f, M5g, M5h, M5i, M5j, M5k, M5l, M5m, M5n, M5o, M5p)
+Modnames <- paste("M5", letters[1:16], sep = "")##letters[1:16] equals a:p
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+control=lmerControl(optCtrl=list(maxfun=20000))
+
+M5h1<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + c.(normal) + I(c.(normal)^2) + c.(anomaly) + I(c.(anomaly)^2) + (c.(log(Age))|FishID) + (1|zone:fYear) + (1|zone) + (1|zone:fCohort), Data2)

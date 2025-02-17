@@ -1,0 +1,247 @@
+---
+title: "Học phương pháp phân tích mới từ các nghiên cứu đã công bố"
+#description: |
+#  Description
+# author:
+#   - name: Bùi Tuấn Anh
+#     url: https://bui-tuananh.github.io
+# date: '2024-08-22'
+citation: false  
+#preview: ../../img/2024-07-file.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+    df_print: kable_df
+bibliography:
+  - ../../bibs/bib.bib
+draft: false
+#tags: [R 101] #for search
+categories:
+  - Phân tích dữ liệu
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+# library(ecmwfr)    # tải dữ liệu cds
+# library(tidyverse) # xử lý và trực quan hóa dữ liệu
+# library(sf)        # xử lý dữ liệu không gian dạng vector
+# library(stars)     # xử lý dữ liệu không gian dạng raster
+# # library(broom)
+library(kableExtra)
+# # library(visibly)
+# #library(glmmTMB)
+# library(reactable)
+# library(patchwork)
+# library(tmap)      # hiển thị dữ liệu không gian
+# library(readxl)    # đọc dữ liệu Excel
+library(lme4)
+library(AICcmodavg)
+library(effects)
+library(lattice)
+library(plyr)
+
+kable_df <- function(..., digits=2) {
+  kable(..., digits=digits) %>%
+    kable_styling(full_width = F)
+}
+# 
+# rnd = tidyext::rnd #https://m-clark.github.io/tidyext/ #devtools::install_github('m-clark/tidyext')
+# #theme_set(theme_bw())
+```
+
+Giả sử bạn đang thấy có một phương pháp phân tích mới được áp dụng ở một
+vài nghiên cứu và bạn muốn học theo để áp dụng trong nghiên cứu của bạn
+thì bạn sẽ làm thế nào? Nếu là mình thì mình sẽ tìm xem có công bố nào
+có kèm code R, hoặc tốt hơn nữa là kèm cả dữ liệu, để làm theo. Hiện
+nay, ngày càng nhiều các nhà nghiên cứu công bố kèm code R và dữ liệu để
+đảm bảo tính tái lập và minh bạch trong khoa học. Vì thế, việc tìm code
+R để học theo phương pháp mới có thể sẽ không quá khó. Thông thường
+thông tin này có tìm ở mục Data availability hoặc Supplementary
+information/materials (Hình \@ref(fig:fig1)).
+
+```{r fig1, fig.cap="Ví dụ về thông tin code R được ghi chú ở mục Data availability từ một nghiên cứu của nhóm mình", echo = FALSE, out.width="70%"}
+knitr::include_graphics("images/img1.PNG")
+```
+
+Ví dụ trong trường hợp của mình khi thực hiện nghiên cứu về [ảnh hưởng
+của nhiệt độ tới sự phát triển của
+cá](https://linkinghub.elsevier.com/retrieve/pii/S0272771424004293).
+Mình đã học theo phương pháp phân tích sử dụng mô hình hỗn hợp (mixed
+effects model) được mô tả trong [Morrongiello and Thresher
+(2015)](https://esajournals.onlinelibrary.wiley.com/doi/10.1890/13-2355.1).
+Ở phần Supplementary information, nhóm tác giả có đính kèm file hướng
+dẫn (S1_tutorial.pdf), R code (S2_R_code.txt), và dữ liệu ví dụ
+(S3_within_zone_example_data.csv, S4_among_zone_example_data.csv,
+S5_example_temperature.csv)
+([link](https://figshare.com/articles/dataset/Supplement_1_Detailed_worked_tutorials_of_analyses_performed_in_this_paper_including_R_code_for_mixed_effects_models_and_example_data_/3568734?backTo=/collections/A_statistical_framework_to_explore_ontogenetic_growth_variation_among_individuals_and_populations_a_marine_fish_example/3309903)).
+Ở dưới là ví dụ mình thực hiện theo một vài bước phân tích.
+
+```{r}
+# 1. Tải thư viện cần dùng
+####Packages used: 
+library(lme4)
+library(AICcmodavg)
+library(effects)
+library(lattice)
+library(plyr)
+
+# 2. Tải dữ liệu
+#######data reading and preparation##########
+# Data<-read.csv('within zone example data.csv')###Supplement S2
+Data<-read.csv('./data/S3_within_zone_example_data2.csv')###Supplement S2 
+# Mình để file trong thư mục data nên phải thêm ./data/ trước tên file
+# tên file cũng khác bản hướng dẫn vì tên trong file Supplementary Information là S3_within_zone_example_data
+# file S3_within_zone_example_data2 là bản copy của file gốc và đã xóa các dòng thông tin mô tả trong file, đảm bảo file đúng cấu trúc để tải vào R
+
+# 3. Khám phá dữ liệu 
+# 3.1. Kiểm tra dữ liệu
+head(Data)
+str(Data)
+```
+
+```{r}
+# 3.2. Vẽ sự phát triển (increment) theo độ tuổi của từng cá thể cá
+###plot of individual growth trajectories 
+xyplot(Increment ~ Age, group=FishID, Data, type=c('l','p'))
+```
+
+```{r}
+# 4. Phát triển và so sánh mô hình
+###centring function
+c. <- function (x) scale(x, scale = FALSE) 
+
+###covert Year and Cohort variables into factors
+Data$fYear <- factor(Data$Year)
+Data$fCohort <- factor(Data$Cohort)
+
+#######within zone models#####
+M1a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (1|FishID),Data)
+M1b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID),Data)
+
+#model comparison
+models<-list(M1a,M1b)
+Modnames <- c('M1a ', 'M1b ')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+M2a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear), Data)
+M2b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fCohort), Data)
+
+###intraclass correlations
+vYear<-VarCorr(M2a)$fYear[1]
+vFishID<-VarCorr(M2a)$FishID[1] 
+vAge<-VarCorr(M2a)$FishID[4]
+covar<-VarCorr(M2a)$FishID[2]
+vErr<- (attr(VarCorr(M2a),'sc'))^2
+vYear / (vYear + vFishID + vAge + covar + vErr)
+
+M3a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID)+(c.(log(Age))|fYear), Data)
+M3b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fCohort), Data)
+M4a<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear) + (1|fCohort), Data)
+M4b<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fYear) + (1|fCohort), Data)
+M4c<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (1|fYear) + (c.(log(Age))|fCohort), Data)
+M4d<- lmer (log(Increment) ~ c.(log(Age)) * sex + c.(log(AAC)) + (c.(log(Age))|FishID) + (c.(log(Age))|fYear) + (c.(log(Age))|fCohort), Data)
+
+#model comparison
+models<-list(M2a,M2b,M3a,M3b,M4a,M4b,M4c,M4d)
+Modnames <- c('M2a', 'M2b', 'M3a', 'M3b', 'M4a', 'M4b', 'M4c', 'M4d')
+aictab(cand.set = models, modnames = Modnames, sort = TRUE)
+
+######R square for mixed models
+
+rsquared.glmm=function(modlist) {
+  do.call(rbind,lapply(modlist,function(i) {
+    if(inherits(i,"merMod") | class(i)=="merLmerTest") {
+      VarF=var(as.vector(fixef(i) %*% t(i@pp$X))) 
+      VarRand=colSums(do.call(rbind,lapply(VarCorr(i),function(j) j[1])))
+      VarResid=attr(VarCorr(i),"sc")^2
+      Rm=VarF/(VarF+VarRand+VarResid)
+      Rc=(VarF+VarRand)/(VarF+VarRand+VarResid)
+      Rsquared.mat=data.frame(Class=class(i),Marginal=Rm,Conditional=Rc,
+      AIC=AIC(update(i,REML=F))) } 
+     else { print("Function requires models of class lm, lme, mer, or    merMod") 
+} } ) ) }
+
+rsquared.glmm(models)
+```
+
+```{r}
+# 5. Kết quả - biểu đồ sự thay đổi của random effect year và cohort theo thời gian
+####random effects plots##########
+#extract Year effects
+(year.M2a<-ranef(M2a)$fYear[,1])
+(year.se.M2a<-sqrt (attr(ranef(M2a,postVar=TRUE) [["fYear"]],"postVar")[1,1,]))
+
+M2ayear<-data.frame(y=year.M2a)
+M2ayear$upper<-(M2ayear$y+year.se.M2a)
+M2ayear$lower<-(M2ayear$y-year.se.M2a)
+M2anew <- data.frame(year = (as.numeric(levels(Data$fYear)))) 
+M2adata<-cbind(M2anew,M2ayear)
+
+#extract Cohort effects
+(Cohort.M3b<-ranef(M3b)$fCohort[,1])
+(Cohort.se.M3b <-sqrt (attr(ranef(M3b,postVar=TRUE) [["fCohort"]],"postVar")[1,1,]))
+
+M3bCohort<-data.frame(y=Cohort.M3b)
+M3bCohort $SE<-( Cohort.se.M3b)##specify SEs
+M3bCohort $upper<-(M3bCohort$y+Cohort.se.M3b)
+M3bCohort $lower<-(M3bCohort$y-Cohort.se.M3b)
+M3bnew <- data.frame(Cohort = (as.numeric(levels(Data$fCohort)))) 
+M3bdata<-cbind(M3bnew,M3bCohort)
+
+#the plots
+par(mfrow=c(2,1))
+##plot year
+plot(range(M2anew$year), range(M2ayear), type = "n", ann = FALSE,axes=F,xlim=c(1970,2010))
+axis((1),las=1,tcl=-.2,cex.axis=1,xaxp=c(1970,2010,4),mgp=c(3,.4,0))
+axis((2),las=1,tcl=-.2,cex.axis=1,mgp=c(3,.4,0))
+box(bty='l')
+
+CI.U <- M2ayear[, "upper"]
+CI.L <- M2ayear[, "lower"] 
+X.Vec <- c(M2anew$year, tail(M2anew$year, 1), rev(M2anew$year), M2anew$year[1]) 
+Y.Vec <- c(CI.L, tail(CI.U, 1), rev(CI.U), CI.L[1]) 
+polygon(X.Vec, Y.Vec, col = "grey", border = NA) 
+#matlines(M2anew$year,M2ayear, lty = c(1, 2, 2), type = "l", col = c("black", "", ""),lwd=1.5)
+matlines(M2anew$year,M2ayear, lty = c(1, 2, 2), type = "l", col = c("black", "grey", "grey"),lwd=1.5)
+points(M2adata$year,M2adata$y,pch=16,cex=.8)
+lines(c(1950,2010),c(0,0),lwd=1,lty=2)
+mtext('predicted growth (mm)',side=2,cex=1,line=2.5)
+mtext('Year',side=1,cex=1,line=2.5)
+mtext('Year random effect',side=3,cex=2,line=2)
+
+##plot cohort
+xy.error.bars<-function (xbar,ybar,x,y){
+plot(x, y, pch=16,cex=1,axes=FALSE,ylab='',xlab='',ylim=c(-.25,.25), xlim=c(1970,2010))
+arrows(x, y-yb, x, y+yb, code=3, angle=90, length=0,lwd=1)
+axis((1),las=1,tcl=-.2,mgp=c(3,.4,0))
+axis((2),las=2,tcl=-.2,mgp=c(3,.4,0))
+box(bty='l')
+}
+x<-M3bdata$Cohort
+y<- M3bdata$y
+xb<-c('')
+yb<- M3bdata$SE
+xy.error.bars(xb,yb,x,y)
+lines(c(1960,2010),c(0,0),lwd=1,lty=2)
+mtext('Cohort',side=1,line=2.5,cex=1)
+mtext('predicted growth (mm)',side=2,cex=1,line=2.5)
+mtext('Cohort random effect',side=3,cex=2,line=2)
+```
